@@ -1,18 +1,17 @@
 const Joi = require("joi");
 
 const templateSchema = Joi.object({
-    name: Joi.string().required(),
-    description: Joi.string(),
-    user_id: Joi.string().required(),
-    bModel_id: Joi.string().required(),
-    commerce_id: Joi.string().required(),
-    cms_id: Joi.string().required(),
-    crm_id: Joi.string().required(),
-    search_id: Joi.string().required(),
-    payment_id: Joi.string().required(),
-    type: Joi.string().valid("Custom", "Present").required(),
+  name: Joi.string().min(3).max(100).required(),
+  description: Joi.string().optional(),
+  bModel_id: Joi.string().required(),
+  type: Joi.string().valid("Custom", "Preset").required(),
+  commerce_id: Joi.string().required(),
+  cms_id: Joi.string().required(),
+  crm_id: Joi.string().optional(),
+  search_id: Joi.string().required(),
+  payment_ids: Joi.array().items(Joi.string()).required(),
 });
 
 module.exports = {
-    templateSchema,
+  templateSchema,
 };

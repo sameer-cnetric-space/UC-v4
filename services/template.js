@@ -32,7 +32,7 @@ class TemplateService {
       commerce_id,
       cms_id,
       crm_id,
-      payment_id,
+      payment_ids,
       search_id,
       user_id,
     } = payload;
@@ -41,7 +41,7 @@ class TemplateService {
       description,
       commerce_id,
       cms_id,
-      payment_id,
+      payment_ids,
       crm_id,
       search_id,
       type,
@@ -49,7 +49,13 @@ class TemplateService {
       user_id,
     });
     const newTemplate = await template.save();
-    return newTemplate;
+    const formattedRes = {
+      id: newTemplate._id,
+      name: newTemplate.name,
+      type: newTemplate.type,
+    };
+
+    return formattedRes;
   }
 
   //Update Template

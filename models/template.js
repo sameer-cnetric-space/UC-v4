@@ -54,7 +54,6 @@ const templateSchema = new mongoose.Schema(
     },
     crm_id: {
       type: String,
-      required: true,
     },
     metadata: {
       type: Object,

@@ -1,9 +1,9 @@
 const express = require("express");
-const { entities } = require("../controllers/entity");
-const imageURLGeneration = require("../utils/imageMapping");
+const EntityController = require("../controllers/entity");
+const auth = require("../middlewares/auth");
 
 const router = express.Router();
 
-router.get("/", imageURLGeneration, entities);
+router.get("/", auth, EntityController.getEntities);
 
 module.exports = router;

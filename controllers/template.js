@@ -12,7 +12,7 @@ class TemplateController {
         commerce_id,
         cms_id,
         crm_id,
-        payment_id,
+        payment_ids,
         search_id,
       } = req.body;
 
@@ -21,7 +21,7 @@ class TemplateController {
         description,
         commerce_id,
         cms_id,
-        payment_id,
+        payment_ids,
         crm_id,
         search_id,
         type,
@@ -54,12 +54,10 @@ class TemplateController {
 
       return res.status(200).json(template);
     } catch (error) {
-      return res
-        .status(500)
-        .json({
-          message: "Error fetching template data",
-          error: error.message,
-        });
+      return res.status(500).json({
+        message: "Error fetching template data",
+        error: error.message,
+      });
     }
   }
 
@@ -72,14 +70,21 @@ class TemplateController {
         return res.status(404).json({ message: "Template not found" });
       }
 
-      return res.status(200).json(template);
+      const formattedRes = {
+        templates: templates.map((template) => ({
+          id: template.id,
+          name: template.name,
+          description: template.description,
+          type: template.type,
+        })),
+      };
+
+      return res.status(200).json(formattedRes);
     } catch (error) {
-      return res
-        .status(500)
-        .json({
-          message: "Error fetching template data",
-          error: error.message,
-        });
+      return res.status(500).json({
+        message: "Error fetching template data",
+        error: error.message,
+      });
     }
   }
 
@@ -99,12 +104,10 @@ class TemplateController {
 
       res.status(200).json(updatedTemplate);
     } catch (error) {
-      return res
-        .status(500)
-        .json({
-          message: "Error updating template data",
-          error: error.message,
-        });
+      return res.status(500).json({
+        message: "Error updating template data",
+        error: error.message,
+      });
     }
   }
 
@@ -121,12 +124,10 @@ class TemplateController {
 
       res.status(200).json({ msg: "Template deleted successfully" });
     } catch (error) {
-      return res
-        .status(500)
-        .json({
-          message: "Error deleting template data",
-          error: error.message,
-        });
+      return res.status(500).json({
+        message: "Error deleting template data",
+        error: error.message,
+      });
     }
   }
 }
