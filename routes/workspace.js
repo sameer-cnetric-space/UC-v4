@@ -9,10 +9,10 @@ const router = express.Router();
 router.post(
   "/",
   authMiddleware,
-  validate(workspaceSchema),
+  // validate(workspaceSchema),
   WorkspaceController.createWorkspace
 );
-router.get("/", authMiddleware, WorkspaceController.getAllUserWorkspaces);
+router.get("/", authMiddleware, WorkspaceController.getWorkspaceByUserId);
 router.get("/:id", authMiddleware, WorkspaceController.getWorkspaceById);
 router.put("/:id", authMiddleware, WorkspaceController.updateWorkspace);
 router.delete("/:id", authMiddleware, WorkspaceController.deleteWorkspace);

@@ -31,18 +31,16 @@ const checkEntitiesExist = (entitiesToCheck) => async (req, res, next) => {
         for (const singleId of id) {
           const entity = await model.findOne({ _id: singleId });
           if (!entity) {
-            return res
-              .status(404)
-              .json({
-                message: `${friendlyName} with ID ${singleId} not found`,
-              });
+            return res.status(400).json({
+              message: `${friendlyName} with ID ${singleId} not found`,
+            });
           }
         }
       } else {
         const entity = await model.findOne({ _id: id });
         if (!entity) {
           return res
-            .status(404)
+            .status(400)
             .json({ message: `${friendlyName} with ID ${id} not found` });
         }
       }

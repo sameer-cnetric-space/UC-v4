@@ -5,7 +5,7 @@ const client = redis.createClient({
   url: process.env.REDIS_URL || "redis://localhost:6379", // Adjust as needed
   socket: {
     reconnectStrategy: (retries) => {
-      if (retries >= 5) {
+      if (retries >= 2) {
         console.error("Max retries reached. Exiting...");
         return new Error("Max retries reached. Exiting...");
       }
@@ -16,11 +16,17 @@ const client = redis.createClient({
   },
 });
 
-client.on("error", (err) => console.error("Redis Client Error", err));
-client.on("ready", () => console.log("Redis Client Connected Successfully"));
-client.on("reconnecting", (delay) =>
-  console.log(`Redis Client reconnecting in ${delay}ms`)
-);
+client.on("error", (err) => {
+  console.error("Redis Client Error:", err);
+});
+
+client.on("ready", () => {
+  console.log("Redis Client ready to be connected");
+});
+
+client.on("reconnecting", (delay) => {
+  console.log(`Redis Client reconnecting in ${delay}ms`);
+});
 
 // Connect to Redis with error handling
 (async () => {
@@ -29,6 +35,7 @@ client.on("reconnecting", (delay) =>
     console.log("Connected to Redis");
   } catch (error) {
     console.error("Failed to connect to Redis:", error);
+    process.exit(1); // Exit the server on connection failure
   }
 })();
 

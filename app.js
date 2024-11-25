@@ -7,6 +7,7 @@ const cors = require("cors");
 const routes = require("./routes");
 const startServer = require("./server");
 const path = require("path");
+const checkRedis = require("./middlewares/checkRedis");
 
 const app = express();
 
@@ -33,6 +34,9 @@ app.use(express.json());
 
 // Use app routes
 app.use("/api/uc", routes);
+
+// Redis connectivity middleware
+app.use(checkRedis);
 
 //Not Found  Middleware
 app.use((req, res, next) => {

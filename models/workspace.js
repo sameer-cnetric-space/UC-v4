@@ -13,15 +13,15 @@ const workspaceSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+      trim: true, // Removes extra spaces
     },
     description: {
       type: String,
-      default: "Workspace description",
+      default: "Streamline your operations with this all-in-one workspace.",
     },
     commerce: {
       commerce_id: {
         type: String,
-        ref: "Commerce",
         required: true,
       },
       creds: {
@@ -32,7 +32,6 @@ const workspaceSchema = new mongoose.Schema(
     cms: {
       cms_id: {
         type: String,
-        ref: "Cms",
         required: true,
       },
       creds: {
@@ -40,32 +39,30 @@ const workspaceSchema = new mongoose.Schema(
         required: true,
       },
     },
-    payment: {
-      payment_id: {
-        type: String,
-        ref: "Payment",
-        required: true,
+    payment: [
+      {
+        payment_id: {
+          type: String,
+          required: true,
+        },
+        creds: {
+          type: Object,
+          required: true,
+        },
+        _id: false,
       },
-      creds: {
-        type: Object,
-        required: true,
-      },
-    },
+    ],
     crm: {
       crm_id: {
         type: String,
-        ref: "Crm",
-        required: true,
       },
       creds: {
         type: Object,
-        required: true,
       },
     },
     search: {
       search_id: {
         type: String,
-        ref: "Search",
         required: true,
       },
       creds: {
@@ -75,21 +72,18 @@ const workspaceSchema = new mongoose.Schema(
     },
     composer_url: {
       type: String,
-      required: true,
       default: "https://universalcomposer.com",
     },
     user_id: {
       type: String,
-      ref: "User",
       required: true,
     },
     template_id: {
       type: String,
-      ref: "Template",
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true } // Automatically adds `createdAt` and `updatedAt` fields
 );
 
 module.exports = mongoose.model("Workspace", workspaceSchema);
