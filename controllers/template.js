@@ -91,19 +91,23 @@ class TemplateController {
   //Update Template
   static async updateTemplate(req, res) {
     try {
-      const updates = req.body;
+      const { template } = req.body;
       const updatedTemplate = await TemplateService.updateTemplate(
-        updates,
+        template,
         req.params.id,
         req.userId
       );
 
-      if (!updatedTemplate) {
+      res
+        .status(200)
+        .json({ msg: "Template updated successfully", id: updatedTemplate });
+    } catch (error) {
+      if (error.message.includes("Template not found")) {
         return res.status(404).json({ message: "Template not found" });
       }
-
-      res.status(200).json(updatedTemplate);
-    } catch (error) {
+      if (error.message.includes("Can't Update Preset Template")) {
+        return res.status(400).json({ message: error.message });
+      }
       return res.status(500).json({
         message: "Error updating template data",
         error: error.message,
@@ -122,7 +126,9 @@ class TemplateController {
         return res.status(404).json({ message: "Template not found" });
       }
 
-      res.status(200).json({ msg: "Template deleted successfully" });
+      res
+        .status(200)
+        .json({ msg: "Template deleted successfully", id: deletedTemplate });
     } catch (error) {
       return res.status(500).json({
         message: "Error deleting template data",

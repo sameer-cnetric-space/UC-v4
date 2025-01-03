@@ -92,6 +92,7 @@
 
 const Workspace = require("../models/workspace");
 const TemplateService = require("./template");
+const { formatCommerce } = require("../utils/dataFormatter/redis/commerce");
 const RedisService = require("./redis"); // Import RedisService
 
 class WorkspaceServices {
@@ -100,7 +101,7 @@ class WorkspaceServices {
    * @param {String} id - Workspace ID
    */
   static async getWorkspaceById(id) {
-    const cacheKey = `workspace:${id}`;
+    const cacheKey = `workspace:${id}:`;
     // Check if workspace is cached
     const cachedWorkspace = await RedisService.getCache(cacheKey);
     if (cachedWorkspace) {
@@ -109,32 +110,44 @@ class WorkspaceServices {
 
     // Fetch from database if not cached
     const workspace = await Workspace.findById(id);
-    if (workspace) {
-      await RedisService.setCache(cacheKey, workspace); // Cache workspace
-    }
+    // if (workspace) {
+    //   await RedisService.setCache(cacheKey, workspace); // Cache workspace
+    // }
     return workspace;
   }
 
   /**
    * Get Workspace by ID and User ID with caching
-   * @param {String} workspace_id - Workspace ID
+   * @param {String} template_id - Template ID
    * @param {String} user_id - User ID
    */
-  static async getWorkspaceByUserId(workspace_id, user_id) {
-    const cacheKey = `workspace:${workspace_id}:user:${user_id}`;
-    const cachedWorkspace = await RedisService.getCache(cacheKey);
-    if (cachedWorkspace) {
-      return cachedWorkspace;
-    }
+  static async getWorkspacesByUserId(template_id, user_id) {
+    try {
+      // Query all workspaces based on template_id and user_id
+      const workspaces = await Workspace.find({
+        template_id,
+        user_id,
+      }).select("_id name description");
 
-    const workspace = await Workspace.findOne({
-      _id: workspace_id,
-      user_id: user_id,
-    });
-    if (workspace) {
-      await RedisService.setCache(cacheKey, workspace);
+      // Handle the case where no workspaces are found
+      if (!workspaces || workspaces.length === 0) {
+        throw new Error(
+          `No workspaces found for template ID: ${template_id} and user ID: ${user_id}`
+        );
+      }
+
+      // Map the workspaces to the desired formatted structure
+      const formattedData = workspaces.map((workspace) => ({
+        id: workspace._id,
+        name: workspace.name,
+        description: workspace.description,
+      }));
+
+      return formattedData;
+    } catch (error) {
+      console.error("Error fetching workspaces by user ID:", error.message);
+      throw new Error("Failed to fetch workspaces data.");
     }
-    return workspace;
   }
 
   /**
@@ -162,68 +175,78 @@ class WorkspaceServices {
    * @param {String} user_id - User ID
    */
   static async createWorkspace(payload, template_id, user_id) {
-    const {
-      name,
-      description = "Streamline your operations with this all-in-one workspace.", // Default  description
-      creds: { commerce, cms, crm, payment, search }, // Destructure credentials
-      composer_url = "https://universalcomposer.com", // Default composer_url
-    } = payload;
+    try {
+      {
+        const {
+          name,
+          description = "Streamline your operations with this all-in-one workspace.", // Default  description
+          creds: { commerce, cms, crm, payment, search }, // Destructure credentials
+          composer_url = "https://universalcomposer.com", // Default composer_url
+        } = payload;
 
-    // Fetch template details
-    const templateDetails = await TemplateService.getTemplateByUserId(
-      template_id,
-      user_id
-    );
-    if (!templateDetails) {
-      throw new Error("Template not found");
+        // Fetch template details
+        const templateDetails = await TemplateService.getTemplateByUserId(
+          template_id,
+          user_id
+        );
+        if (!templateDetails) {
+          throw new Error("Template not found");
+        }
+
+        // Construct workspace object
+        const workspaceData = {
+          name,
+          description,
+          commerce: {
+            commerce_id: templateDetails.commerce_id,
+            creds: commerce,
+          },
+          cms: {
+            cms_id: templateDetails.cms_id,
+            creds: cms,
+          },
+          payment: payment.map((cred, index) => ({
+            payment_id:
+              templateDetails.payment_ids[index] || `pay-${index + 1}`, // Handle dynamic payment IDs
+            creds: cred,
+          })), // Array of payment credentials
+          search: {
+            search_id: templateDetails.search_id,
+            creds: search,
+          },
+          user_id,
+          template_id,
+        };
+
+        // Add optional CRM field if provided
+        if (crm) {
+          workspaceData.crm = {
+            crm_id: templateDetails.crm_id,
+            creds: crm,
+          };
+        }
+
+        // Add composer_url if provided
+        if (composer_url) {
+          workspaceData.composer_url = composer_url;
+        }
+
+        //Ping to each server (Vendure,Strapi,Typesense)
+
+        // Create and save the workspace
+        const workspace = new Workspace(workspaceData);
+        const newWorkspace = await workspace.save();
+
+        // Cache the new workspace
+        const formattedData = await formatCommerce(newWorkspace);
+
+        await RedisService.setEnv(newWorkspace._id, formattedData);
+
+        return newWorkspace._id;
+      }
+    } catch (error) {
+      throw new Error(`Error creating workspace: ${error.message}`);
     }
-
-    // Construct workspace object
-    const workspaceData = {
-      name,
-      description,
-      commerce: {
-        commerce_id: templateDetails.commerce_id,
-        creds: commerce,
-      },
-      cms: {
-        cms_id: templateDetails.cms_id,
-        creds: cms,
-      },
-      payment: payment.map((cred, index) => ({
-        payment_id: templateDetails.payment_ids[index] || `pay-${index + 1}`, // Handle dynamic payment IDs
-        creds: cred,
-      })), // Array of payment credentials
-      search: {
-        search_id: templateDetails.search_id,
-        creds: search,
-      },
-      user_id,
-      template_id,
-    };
-
-    // Add optional CRM field if provided
-    if (crm) {
-      workspaceData.crm = {
-        crm_id: templateDetails.crm_id,
-        creds: crm,
-      };
-    }
-
-    // Add composer_url if provided
-    if (composer_url) {
-      workspaceData.composer_url = composer_url;
-    }
-
-    // Create and save the workspace
-    const workspace = new Workspace(workspaceData);
-    const newWorkspace = await workspace.save();
-
-    // Cache the new workspace
-    const formattedData = n(newWorkspace);
-    await RedisService.setEnv(newWorkspace._id, newWorkspace);
-
-    return newWorkspace;
   }
 
   /**
@@ -249,21 +272,26 @@ class WorkspaceServices {
 
   /**
    * Delete a Workspace
+   * @param {String} template_id - Template ID
    * @param {String} workspace_id - Workspace ID
    * @param {String} user_id - User ID
    */
-  static async deleteWorkspace(workspace_id, user_id) {
+  static async deleteWorkspace(template_id, workspace_id, user_id) {
+    console.log(template_id);
+    console.log(workspace_id);
+    console.log(user_id);
     const deletedWorkspace = await Workspace.findOneAndDelete({
       _id: workspace_id,
       user_id,
+      template_id,
     });
 
     if (deletedWorkspace) {
-      const cacheKey = `workspace:${workspace_id}`;
-      await RedisService.clearCache(cacheKey); // Clear cache for deleted workspace
+      const cacheKey = `workspace:${workspace_id}:env`;
+      await RedisService.clearCache(cacheKey); // Clear env for deleted workspace
     }
 
-    return deletedWorkspace;
+    return deletedWorkspace?._id;
   }
 
   /**

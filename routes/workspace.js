@@ -4,7 +4,7 @@ const WorkspaceController = require("../controllers/workspace");
 const validate = require("../middlewares/validate");
 const workspaceSchema = require("../validations/workspace");
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true }); // Enable access to parent params
 
 router.post(
   "/",
@@ -13,8 +13,20 @@ router.post(
   WorkspaceController.createWorkspace
 );
 router.get("/", authMiddleware, WorkspaceController.getWorkspaceByUserId);
-router.get("/:id", authMiddleware, WorkspaceController.getWorkspaceById);
-router.put("/:id", authMiddleware, WorkspaceController.updateWorkspace);
-router.delete("/:id", authMiddleware, WorkspaceController.deleteWorkspace);
+router.get(
+  "/:workspace_id",
+  authMiddleware,
+  WorkspaceController.getWorkspaceById
+);
+router.put(
+  "/:workspace_id",
+  authMiddleware,
+  WorkspaceController.updateWorkspace
+);
+router.delete(
+  "/:workspace_id",
+  authMiddleware,
+  WorkspaceController.deleteWorkspace
+);
 
 module.exports = router;

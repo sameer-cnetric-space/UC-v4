@@ -65,7 +65,11 @@ const { templateEntityCheck } = require("../utils/entityCheckConfig");
 const TemplateController = require("../controllers/template");
 const validate = require("../middlewares/validate");
 const auth = require("../middlewares/auth");
-const { templateSchema } = require("../validations/templates");
+const {
+  templateSchema,
+  templateUpdateSchema,
+} = require("../validations/templates");
+const workspaceRoutes = require("./workspace");
 
 const router = express.Router();
 
@@ -79,5 +83,15 @@ router.post(
   templateEntityCheck(),
   TemplateController.createTemplate
 );
+
+router.put(
+  "/:id",
+  auth,
+  validate(templateUpdateSchema),
+  TemplateController.updateTemplate
+);
+
+router.delete("/:id", auth, TemplateController.deleteTemplate);
+router.use("/:id/workspaces", workspaceRoutes);
 
 module.exports = router;

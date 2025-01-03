@@ -8,15 +8,14 @@ class WorkspaceController {
    */
   static async getWorkspaceById(req, res) {
     try {
-      const { id } = req.params;
-      const workspace = await WorkspaceServices.getWorkspaceById(id);
+      const { id, workspace_id } = req.params;
+      const workspace = await WorkspaceServices.getWorkspaceById(workspace_id);
 
       if (!workspace) {
         return res.status(404).json({ message: "Workspace not found" });
       }
 
       return res.status(200).json({
-        status: "success",
         data: workspace,
       });
     } catch (error) {
@@ -36,23 +35,22 @@ class WorkspaceController {
    */
   static async getWorkspaceByUserId(req, res) {
     try {
-      const { workspace_id } = req.params;
+      const { id } = req.params;
       const user_id = req.userId; // Assuming userId is extracted from the token
 
-      const workspace = await WorkspaceServices.getWorkspaceByUserId(
-        workspace_id,
+      const workspaces = await WorkspaceServices.getWorkspacesByUserId(
+        id, // template_id
         user_id
       );
 
-      if (!workspace) {
+      if (!workspaces) {
         return res
           .status(404)
-          .json({ message: "Workspace not found for this user" });
+          .json({ message: "Workspaces not found for this user" });
       }
 
       return res.status(200).json({
-        status: "success",
-        data: workspace,
+        workspaces,
       });
     } catch (error) {
       console.error("Error in getWorkspaceByUserId:", error.message);
@@ -96,20 +94,19 @@ class WorkspaceController {
    */
   static async createWorkspace(req, res) {
     try {
-      const { template_id } = req.body;
+      const { id } = req.params;
       const user_id = req.userId; // Assuming userId is extracted from the token
 
       // Call the service to create the workspace
       const workspace = await WorkspaceServices.createWorkspace(
         req.body,
-        template_id,
+        id,
         user_id
       );
 
       return res.status(201).json({
-        status: "success",
         message: "Workspace created successfully",
-        data: workspace,
+        id: workspace,
       });
     } catch (error) {
       console.error("Error in createWorkspace:", error.message);
@@ -163,10 +160,11 @@ class WorkspaceController {
    */
   static async deleteWorkspace(req, res) {
     try {
-      const { id: workspace_id } = req.params;
+      const { id, workspace_id } = req.params;
       const user_id = req.userId; // Assuming userId is extracted from the token
 
       const deletedWorkspace = await WorkspaceServices.deleteWorkspace(
+        id,
         workspace_id,
         user_id
       );
@@ -176,8 +174,8 @@ class WorkspaceController {
       }
 
       return res.status(200).json({
-        status: "success",
         message: "Workspace deleted successfully",
+        id: deletedWorkspace,
       });
     } catch (error) {
       console.error("Error in deleteWorkspace:", error.message);

@@ -58,25 +58,60 @@ class TemplateService {
     return formattedRes;
   }
 
-  //Update Template
+  // Update Template
   static async updateTemplate(payload, template_id, user_id) {
-    const update = payload;
+    // Fetch the template document by ID and user ID
+    const template = await Template.findOne({
+      _id: template_id,
+      user_id,
+    });
 
-    const updatedTemplate = await Template.findByIdAndUpdate(
-      { _id: template_id, user_id: user_id },
-      update,
-      { new: true, runValidators: true }
-    );
-    return updatedTemplate;
+    if (!template) {
+      throw new Error(`Template not found for ID: ${template_id}`);
+    }
+    if (template.type.toLowerCase() === "preset") {
+      throw new Error(`Can't Update Preset Template `);
+    }
+
+    // Allow updates only to name and description
+    if (payload.name !== undefined) {
+      template.name = payload.name;
+    }
+    if (payload.description !== undefined) {
+      template.description = payload.description;
+    }
+
+    // Save the updated template
+    const updatedTemplate = await template.save();
+
+    return updatedTemplate._id;
   }
 
-  //Delete Template
+  // Delete Template
   static async deleteTemplate(template_id, user_id) {
-    const deletedTemplate = await Template.findByIdAndDelete({
+    // Fetch the template by ID and user ID
+    const template = await Template.findOne({
       _id: template_id,
       user_id: user_id,
     });
-    return deletedTemplate;
+
+    // Check if the template exists
+    if (!template) {
+      throw new Error(`Template not found for ID: ${template_id}`);
+    }
+
+    // Check if the template is a preset type
+    if (template.type && template.type.toLowerCase() === "preset") {
+      throw new Error(`Can't delete a preset template.`);
+    }
+
+    // Delete the template
+    const deletedTemplate = await template.deleteOne();
+
+    // delete Template Workspaces as well
+
+    // Return the ID of the deleted template
+    return deletedTemplate._id;
   }
 }
 

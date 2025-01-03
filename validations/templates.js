@@ -12,6 +12,14 @@ const templateSchema = Joi.object({
   payment_ids: Joi.array().items(Joi.string()).required(),
 });
 
+const templateUpdateSchema = Joi.object({
+  template: Joi.object({
+    name: Joi.string().min(3).max(100).optional(),
+    description: Joi.string().optional(),
+  }),
+});
+
 module.exports = {
   templateSchema,
+  templateUpdateSchema,
 };
