@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const seedDB = require("../seed/index");
 
 const clientOptions = {
   serverApi: { version: "1", strict: true, deprecationErrors: true },
@@ -12,6 +13,10 @@ const connectDB = async () => {
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
+
+    // Run the seed script after successful connection
+    await seedDB();
+    console.log("Database Seeding Checked.");
   } catch (error) {
     console.error("Error connecting to the database", error);
     process.exit(1); // Exit the process if the database connection fails

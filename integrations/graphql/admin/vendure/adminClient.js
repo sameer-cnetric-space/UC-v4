@@ -1,5 +1,6 @@
 const createApolloClient = require("../../../../api/apollo/apolloClient");
 const redisService = require("../../../../services/redis");
+const AuthHandler = require("./handlers/client");
 
 async function getVendureClient(workspaceId) {
   // Retrieve the 'env' data from Redis for the specified workspace
@@ -12,21 +13,23 @@ async function getVendureClient(workspaceId) {
   }
 
   // Parse the environment data
-  const { commerce, baseUrl, adminAuth } = envData;
+  const { commerce } = envData;
 
-  // Check if the workspace is of type "vendure"
-  if (commerce !== "vendure") {
+  // Validate the commerce type and essential fields
+  if (!commerce || commerce.name.toLowerCase() !== "vendure") {
     throw new Error(`Workspace ${workspaceId} is not a Vendure workspace`);
   }
 
-  // Validate baseUrl and adminAuth
-  if (!baseUrl || !adminAuth) {
-    throw new Error(`Incomplete environment data for workspace ${workspaceId}`);
+  if (!commerce.baseUrl) {
+    throw new Error(`Base URL is missing for workspace ${workspaceId}`);
   }
 
+  // Use AuthHandler to handle token retrieval and renewal
+  const token = await AuthHandler.getToken(workspaceId);
+
   // Create and return the Vendure Apollo Client
-  return createApolloClient(`${baseUrl}/admin-api`, {
-    Authorization: `Bearer ${adminAuth}`,
+  return createApolloClient(`${commerce.baseUrl}/admin-api`, {
+    Authorization: `Bearer ${token}`,
   });
 }
 

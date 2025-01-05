@@ -1,19 +1,32 @@
 const Template = require("../models/template");
+const TemplateHandler = require("../handlers/template");
 
 class TemplateService {
   //Get template by Id
-  static async getTemplateById(id) {
+  static async getTemplateById(req, id) {
     const template = await Template.findById(id);
-    return template;
+    if (!template) {
+      throw new Error("Template not found");
+    }
+
+    return await TemplateHandler.formatTemplateData(req, template);
   }
 
-  //Get template by Template Id and User Id
-  static async getTemplateByUserId(template_id, user_id) {
-    const template = await Template.findOne({
-      _id: template_id,
+  // Get templates by Template ID and User ID, grouped by type
+  static async getTemplatesByUserId(req, user_id) {
+    // Query for preset templates
+    const presets = await Template.find({
+      type: "Preset",
+    }).select("-__v");
+
+    // Query for custom templates
+    const custom = await Template.find({
       user_id: user_id,
+      type: "Custom",
     });
-    return template;
+
+    // Return an object containing both arrays
+    return await TemplateHandler.formatTemplateDataList(req, presets, custom);
   }
 
   //Get all templates of a User
@@ -28,7 +41,6 @@ class TemplateService {
       name,
       description,
       bModel_id,
-      type,
       commerce_id,
       cms_id,
       crm_id,
@@ -36,6 +48,7 @@ class TemplateService {
       search_id,
       user_id,
     } = payload;
+    const type = "Custom";
     const template = new Template({
       name,
       description,

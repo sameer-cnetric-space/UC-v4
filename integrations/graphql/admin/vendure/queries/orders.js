@@ -6,11 +6,17 @@ const GET_ORDERS_QUERY = gql`
       totalItems
       items {
         id
+        state
+        orderPlacedAt
         customer {
-          id
-          title
           firstName
           lastName
+        }
+        totalWithTax
+        lines {
+          productVariant {
+            name
+          }
         }
       }
     }

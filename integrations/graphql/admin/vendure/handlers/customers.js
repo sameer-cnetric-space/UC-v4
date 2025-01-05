@@ -1,5 +1,4 @@
-// services/customersService.js
-const getVendureClient = require("../adminClient");
+const VendureClientHandler = require("./client");
 const adminCustomersQuery = require("../queries/customers");
 const redisService = require("../../../../../services/redis");
 
@@ -13,11 +12,11 @@ async function getCustomers(workspaceId) {
       return cachedData; // Return cached data if available
     }
 
-    // Create Vendure client and execute the query
-    const client = await getVendureClient(workspaceId);
-    const { data } = await client.query({
-      query: adminCustomersQuery.GET_CUSTOMERS_QUERY,
-    });
+    // Make an authenticated request using VendureClientHandler's automatic re-authentication
+    const data = await VendureClientHandler.makeAuthenticatedRequest(
+      workspaceId,
+      adminCustomersQuery.GET_CUSTOMERS_QUERY
+    );
 
     // Standardize the customer data format
     const standardizedCustomers = data.customers.items.map((item) => ({

@@ -186,6 +186,31 @@ class WorkspaceController {
       });
     }
   }
+
+  /**
+   * Get a Workspace Metrics
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+
+  static async getWorkspaceMetrics(req, res) {
+    try {
+      const { id, workspace_id } = req.params;
+      const user_id = req.userId; // Assuming userId is extracted from the token
+      const metrics = await WorkspaceServices.getWorkspaceMetrics(
+        id,
+        workspace_id,
+        user_id
+      );
+      return res.status(200).json({ metrics });
+    } catch (error) {
+      return res.status(500).json({
+        status: "error",
+        message: "Failed to get workspace metrics",
+        error: error.message,
+      });
+    }
+  }
 }
 
 module.exports = WorkspaceController;

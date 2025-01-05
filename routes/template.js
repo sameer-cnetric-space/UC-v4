@@ -75,6 +75,7 @@ const router = express.Router();
 
 // Fetch all templates for the authenticated user
 router.get("/", auth, TemplateController.getAllUserTemplates);
+router.get("/:id", auth, TemplateController.getTemplateById);
 
 router.post(
   "/",

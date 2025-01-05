@@ -1,6 +1,4 @@
-const gql = require("graphql-tag");
-
-const LOGIN_MUTATION = gql`
+const LOGIN_MUTATION = `
   mutation Login($username: String!, $password: String!, $rememberMe: Boolean) {
     login(username: $username, password: $password, rememberMe: $rememberMe) {
       ... on CurrentUser {

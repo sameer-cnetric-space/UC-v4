@@ -24,7 +24,9 @@ const templateSchema = new mongoose.Schema(
     },
     user_id: {
       type: String,
-      required: true,
+      required: function () {
+        return this.type === "Custom"; // Only required for custom templates
+      },
     },
     bModel_id: {
       type: String,
@@ -51,16 +53,25 @@ const templateSchema = new mongoose.Schema(
     payment_ids: {
       type: [String],
       required: true,
+      validate: {
+        validator: function (array) {
+          return array.length > 0; // At least one payment ID is required
+        },
+        message: "At least one payment ID is required.",
+      },
     },
     crm_id: {
       type: String,
+      required: false, // CRM is optional
     },
     metadata: {
-      type: Object,
+      type: mongoose.Schema.Types.Mixed,
       default: {}, // Flexible field for storing additional info
     },
   },
-  { timestamps: true } // Automatically adds createdAt and updatedAt fields
+  {
+    timestamps: true, // Automatically adds createdAt and updatedAt fields
+  }
 );
 
 module.exports = mongoose.model("Template", templateSchema);

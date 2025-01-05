@@ -43,16 +43,17 @@ class TemplateController {
   //Get template by ID
   static async getTemplateById(req, res) {
     try {
-      const template = await TemplateService.getTemplateByUserId(
-        req.params.id,
-        req.userId
+      const template = await TemplateService.getTemplateById(
+        req,
+        req.params.id
+        //req.userId
       );
 
       if (!template) {
         return res.status(404).json({ message: "Template not found" });
       }
 
-      return res.status(200).json(template);
+      return res.status(200).json({ template });
     } catch (error) {
       return res.status(500).json({
         message: "Error fetching template data",
@@ -64,22 +65,16 @@ class TemplateController {
   //Get all User's Template
   static async getAllUserTemplates(req, res) {
     try {
-      const templates = await TemplateService.userTemplate(req.userId);
+      const templates = await TemplateService.getTemplatesByUserId(
+        req,
+        req.userId
+      );
 
       if (!templates) {
         return res.status(404).json({ message: "Template not found" });
       }
 
-      const formattedRes = {
-        templates: templates.map((template) => ({
-          id: template.id,
-          name: template.name,
-          description: template.description,
-          type: template.type,
-        })),
-      };
-
-      return res.status(200).json(formattedRes);
+      return res.status(200).json({ templates });
     } catch (error) {
       return res.status(500).json({
         message: "Error fetching template data",

@@ -43,7 +43,7 @@ async function requestREST({
       baseURL,
       headers,
     });
-    return response.data;
+    return response;
   } catch (error) {
     handleError(error);
   }

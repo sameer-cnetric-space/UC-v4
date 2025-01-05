@@ -1,11 +1,11 @@
 // src/controllers/commerceController.js
-const commerceService = require("../../../services/admin/commerce");
+const commerceService = require("../../../services/commerce/admin/commerce");
 
 class CommerceController {
   // Controller method to get products list
   async getProductsList(req, res) {
     try {
-      const workspaceId = req.params.workspaceId;
+      const workspaceId = req.params.workspace_id;
       const productsList = await commerceService.getProductsList(workspaceId);
       res.status(200).json({ products: productsList });
     } catch (error) {
@@ -17,9 +17,9 @@ class CommerceController {
   // Controller method to get a single product by ID
   async getProductById(req, res) {
     try {
-      const { workspaceId, productId } = req.params;
+      const { workspace_id, productId } = req.params;
       const product = await commerceService.getProductById(
-        workspaceId,
+        workspace_id,
         productId
       );
       res.status(200).json({ product: product });
@@ -32,7 +32,7 @@ class CommerceController {
   // Controller method to get customers list
   async getCustomersList(req, res) {
     try {
-      const workspaceId = req.params.workspaceId;
+      const workspaceId = req.params.workspace_id;
       const customersList = await commerceService.getCustomersList(workspaceId);
       res.status(200).json({ customers: customersList });
     } catch (error) {
@@ -59,9 +59,9 @@ class CommerceController {
   // Controller method to get orders list
   async getOrdersList(req, res) {
     try {
-      const workspaceId = req.params.workspaceId;
+      const workspaceId = req.params.workspace_id;
       const ordersList = await commerceService.getOrdersList(workspaceId);
-      res.status(200).json(ordersList);
+      res.status(200).json({ orders: ordersList });
     } catch (error) {
       console.error("Error in getOrdersList controller:", error);
       res.status(500).json({ error: "Failed to fetch orders list" });
