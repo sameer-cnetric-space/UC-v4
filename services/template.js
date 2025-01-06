@@ -30,9 +30,18 @@ class TemplateService {
   }
 
   //Get all templates of a User
-  static async userTemplate(id) {
-    const templates = await Template.find({ user_id: id });
-    return templates;
+  static async userTemplate(template_id, user_id) {
+    // First, try to find a preset template by ID
+    let template = await Template.findOne({ _id: template_id, type: "Preset" });
+    // If no preset template is found, look for a custom template with user_id
+    if (!template) {
+      template = await Template.findOne({
+        _id: template_id,
+        user_id,
+        type: "Custom",
+      });
+    }
+    return template;
   }
 
   //Create a Template

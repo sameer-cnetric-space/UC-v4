@@ -93,7 +93,7 @@ class WorkspaceServices {
         } = payload;
 
         // Fetch template details
-        const templateDetails = await TemplateService.getTemplateByUserId(
+        const templateDetails = await TemplateService.userTemplate(
           template_id,
           user_id
         );
