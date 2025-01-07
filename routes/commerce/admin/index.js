@@ -9,16 +9,10 @@ router.get("/products/:productId", commerceController.getProductById);
 
 // Define routes for customers
 router.get("/customers", commerceController.getCustomersList);
-router.get(
-  "/workspaces/:workspaceId/customers/:customerId",
-  commerceController.getCustomerById
-);
+router.get("/customers/:customerId", commerceController.getCustomerById);
 
 // Define routes for orders
 router.get("/orders", commerceController.getOrdersList);
-router.get(
-  "/workspaces/:workspaceId/orders/:orderId",
-  commerceController.getOrderById
-);
+router.get("/orders/:orderId", commerceController.getOrderById);
 
 module.exports = router;

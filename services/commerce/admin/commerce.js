@@ -31,8 +31,8 @@ class CommerceService {
       );
       return product;
     } catch (error) {
-      console.error("Error in getProductById:", error);
-      throw new Error("Failed to fetch product by ID");
+      // console.error("Error in getProductById:", error);
+      throw new Error("Failed to fetch product by ID: " + error.message);
     }
   }
 
@@ -62,8 +62,8 @@ class CommerceService {
       );
       return customer;
     } catch (error) {
-      console.error("Error in getCustomerById:", error);
-      throw new Error("Failed to fetch customer by ID");
+      // console.error("Error in getCustomerById:", error);
+      throw new Error("Failed to fetch customer by ID : " + error.message);
     }
   }
 
@@ -93,8 +93,8 @@ class CommerceService {
       );
       return order;
     } catch (error) {
-      console.error("Error in getOrderById:", error);
-      throw new Error("Failed to fetch order by ID");
+      // console.error("Error in getOrderById:", error);
+      throw new Error("Failed to fetch order by ID :" + error.message);
     }
   }
 }

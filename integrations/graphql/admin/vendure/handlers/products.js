@@ -51,6 +51,10 @@ async function getProductById(workspaceId, productId) {
       }
     );
 
+    if (!data.product) {
+      throw new Error(`Product with ID ${productId} not found`);
+    }
+
     // Standardize the product data format
     const product = data.product;
     const standardizedProduct = {
@@ -67,7 +71,7 @@ async function getProductById(workspaceId, productId) {
       variants: product.variantList.items.map((variant) => ({
         sku: variant.sku,
         stockLevel: variant.stockLevel,
-        price: variant.prices.length > 0 ? variant.prices[0].price : null,
+        price: variant.prices.length > 0 ? variant.prices[0].price / 100 : null,
         currencyCode:
           variant.prices.length > 0 ? variant.prices[0].currencyCode : null,
         previewImage: variant.featuredAsset
@@ -83,7 +87,7 @@ async function getProductById(workspaceId, productId) {
     return standardizedProduct;
   } catch (error) {
     console.error("Error in getProductById:", error);
-    throw new Error("Failed to fetch product by ID");
+    throw new Error("Failed to fetch product by ID : " + error.message);
   }
 }
 

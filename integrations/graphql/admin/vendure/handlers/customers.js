@@ -37,6 +37,68 @@ async function getCustomers(workspaceId) {
   }
 }
 
+async function getCustomerById(workspaceId, customerId) {
+  // const customerCacheKey = `workspace:${workspaceId}:customer:${customerId}`;
+
+  try {
+    // Try to retrieve customer data from Redis cache
+    // const cachedCustomer = await redisService.getCache(customerCacheKey);
+    // if (cachedCustomer) {
+    //   return cachedCustomer; // Return cached data if available
+    // }
+
+    // Make an authenticated request using VendureClientHandler's automatic re-authentication
+    const data = await VendureClientHandler.makeAuthenticatedRequest(
+      workspaceId,
+      adminCustomersQuery.GET_CUSTOMER_BY_ID_QUERY,
+      {
+        id: customerId,
+        orderListOptions: {
+          sort: {
+            orderPlacedAt: "DESC",
+          },
+        },
+      }
+    );
+
+    if (!data.customer) {
+      throw new Error(`Customer with ID ${customerId} not found`);
+    }
+
+    // Standardize the customer data format
+    const customer = {
+      id: data.customer.id,
+      firstName: data.customer.firstName,
+      lastName: data.customer.lastName,
+      emailAddress: data.customer.emailAddress,
+      phoneNumber: data.customer.phoneNumber,
+      addresses: data.customer.addresses.map((address) => ({
+        id: address.id,
+        fullName: address.fullName,
+        streetLine1: address.streetLine1,
+        city: address.city,
+        country: address.country.name,
+      })),
+      orders: data.customer.orders.items.map((order) => ({
+        id: order.id,
+        code: order.code,
+        total: order.totalWithTax / 100,
+        state: order.state,
+        orderPlacedAt: order.orderPlacedAt,
+      })),
+    };
+
+    // Cache the customer data in Redis for 300 seconds
+    //await redisService.setCache(customerCacheKey, customer, 300);
+
+    return customer;
+  } catch (error) {
+    // console.error("Error in getCustomerById:", error);
+    throw new Error("Failed to fetch customer details : " + error.message);
+  }
+}
+
 module.exports = {
   getCustomers,
+  getCustomerById,
 };
