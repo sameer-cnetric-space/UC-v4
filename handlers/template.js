@@ -2,6 +2,7 @@ const CMS = require("../models/cms");
 const Commerce = require("../models/commerce");
 const Payment = require("../models/payments");
 const Search = require("../models/search");
+const BModel = require("../models/bModel");
 const { buildFileUrl } = require("../utils/buildUrl");
 
 class TemplateHandler {
@@ -47,10 +48,15 @@ class TemplateHandler {
           paymentIds: template.payment_ids,
         });
 
+        const bModelName = await BModel.findById(template.bModel_id).select(
+          "name"
+        );
+
         return {
           id: template._id,
           name: template.name,
           description: template.description,
+          bModel: bModelName.name,
           stackIcons,
           createdAt: template.createdAt,
           updatedAt: template.updatedAt,
