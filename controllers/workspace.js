@@ -53,6 +53,9 @@ class WorkspaceController {
         workspaces,
       });
     } catch (error) {
+      if (error.message.includes("No workspaces found for template ID")) {
+        return res.status(404).json({ message: error.message });
+      }
       console.error("Error in getWorkspaceByUserId:", error.message);
       return res.status(500).json({
         status: "error",
@@ -125,11 +128,12 @@ class WorkspaceController {
    */
   static async updateWorkspace(req, res) {
     try {
-      const { id: workspace_id } = req.params;
+      const { id, workspace_id } = req.params;
       const user_id = req.userId; // Assuming userId is extracted from the token
 
       const updatedWorkspace = await WorkspaceServices.updateWorkspace(
         req.body,
+        id,
         workspace_id,
         user_id
       );
@@ -141,9 +145,12 @@ class WorkspaceController {
       return res.status(200).json({
         status: "success",
         message: "Workspace updated successfully",
-        data: updatedWorkspace,
+        id: updatedWorkspace,
       });
     } catch (error) {
+      if (error.message.includes("not found")) {
+        return res.status(404).json({ message: error.message });
+      }
       console.error("Error in updateWorkspace:", error.message);
       return res.status(500).json({
         status: "error",

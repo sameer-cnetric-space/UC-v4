@@ -2,6 +2,7 @@ const Workspace = require("../models/workspace");
 const TemplateService = require("./template");
 const { formatCommerce } = require("../utils/dataFormatter/redis/commerce");
 const RedisService = require("./redis"); // Import RedisService
+//const { userTemplate } = require("./template"); //Avoid circular dependency
 
 class WorkspaceServices {
   /**
@@ -53,8 +54,8 @@ class WorkspaceServices {
 
       return formattedData;
     } catch (error) {
-      console.error("Error fetching workspaces by user ID:", error.message);
-      throw new Error("Failed to fetch workspaces data.");
+      //console.error("Error fetching workspaces by user ID:", error.message);
+      throw new Error("Failed to fetch workspaces data --> " + error.message);
     }
   }
 
@@ -92,11 +93,10 @@ class WorkspaceServices {
           composer_url = "https://universalcomposer.com", // Default composer_url
         } = payload;
 
-        // Fetch template details
-        const templateDetails = await TemplateService.userTemplate(
-          template_id,
-          user_id
-        );
+        // Fetch template details  with circular dependency issue resolved
+        const templateDetails = await (
+          await require("./template")
+        ).userTemplate(template_id, user_id);
         if (!templateDetails) {
           throw new Error("Template not found");
         }
@@ -160,22 +160,98 @@ class WorkspaceServices {
   /**
    * Update a Workspace
    * @param {Object} payload - Updated data
+   * @param {String} template_id - Template ID
    * @param {String} workspace_id - Workspace ID
    * @param {String} user_id - User ID
    */
-  static async updateWorkspace(payload, workspace_id, user_id) {
-    const updatedWorkspace = await Workspace.findOneAndUpdate(
-      { _id: workspace_id, user_id },
-      payload,
-      { new: true, runValidators: true }
-    );
+  static async updateWorkspace(payload, template_id, workspace_id, user_id) {
+    try {
+      // Fetch template details
+      const templateDetails = await TemplateService.userTemplate(
+        template_id,
+        user_id
+      );
+      if (!templateDetails) {
+        throw new Error("Template not found");
+      }
 
-    if (updatedWorkspace) {
-      const cacheKey = `workspace:${workspace_id}`;
-      await RedisService.setCache(cacheKey, updatedWorkspace); // Update cache
+      const {
+        name,
+        description,
+        creds: { commerce, cms, crm, payment, search } = {}, // Destructure updated credentials
+        composer_url,
+      } = payload;
+
+      // Fetch existing workspace details
+      const existingWorkspace = await Workspace.findOne({
+        _id: workspace_id,
+        user_id,
+      });
+
+      if (!existingWorkspace) {
+        throw new Error("Workspace not found");
+      }
+
+      // Update fields if provided
+      if (name) {
+        existingWorkspace.name = name;
+        existingWorkspace.markModified("name");
+      }
+
+      if (description) {
+        existingWorkspace.description = description;
+        existingWorkspace.markModified("description");
+      }
+
+      if (commerce) {
+        existingWorkspace.commerce.creds = commerce;
+        existingWorkspace.markModified("commerce.creds");
+      }
+
+      if (cms) {
+        existingWorkspace.cms.creds = cms;
+        existingWorkspace.markModified("cms.creds");
+      }
+
+      if (payment) {
+        existingWorkspace.payment = payment.map((cred, index) => ({
+          payment_id:
+            existingWorkspace.payment[index]?.payment_id || `pay-${index + 1}`, // Handle dynamic payment IDs
+          creds: cred,
+        }));
+        existingWorkspace.markModified("payment");
+      }
+
+      if (search) {
+        existingWorkspace.search.creds = search;
+        existingWorkspace.markModified("search.creds");
+      }
+
+      if (composer_url) {
+        existingWorkspace.composer_url = composer_url;
+        existingWorkspace.markModified("composer_url");
+      }
+
+      if (crm) {
+        if (!existingWorkspace.crm) {
+          existingWorkspace.crm = {}; // Initialize if not present
+        }
+        existingWorkspace.crm.creds = crm;
+        existingWorkspace.markModified("crm.creds");
+      }
+
+      // Save the updated workspace
+      const updatedWorkspace = await existingWorkspace.save();
+
+      // Update cache with the new workspace data
+      const formattedData = await formatCommerce(updatedWorkspace);
+
+      await RedisService.setEnv(updatedWorkspace._id, formattedData);
+
+      return updatedWorkspace._id;
+    } catch (error) {
+      throw new Error(`Error updating workspace: ${error.message}`);
     }
-
-    return updatedWorkspace;
   }
 
   /**
@@ -185,9 +261,6 @@ class WorkspaceServices {
    * @param {String} user_id - User ID
    */
   static async deleteWorkspace(template_id, workspace_id, user_id) {
-    console.log(template_id);
-    console.log(workspace_id);
-    console.log(user_id);
     const deletedWorkspace = await Workspace.findOneAndDelete({
       _id: workspace_id,
       user_id,
@@ -237,6 +310,46 @@ class WorkspaceServices {
     };
 
     return sample;
+  }
+
+  /**
+   * Delete bulk workspaces by template ID and user ID
+   * @param {String} template_id - The ID of the template
+   * @param {String} user_id - The ID of the user
+   * @returns {Object} - Deletion summary
+   */
+  static async deleteBulkWorkspaces(template_id, user_id) {
+    try {
+      // Find all workspaces matching the template ID and user ID
+      const workspaces = await Workspace.find({ template_id, user_id });
+
+      if (workspaces.length === 0) {
+        return {
+          message: "No workspaces found for the given template and user.",
+          deletedWorkspaces: [],
+        };
+      }
+
+      // Remove the workspaces one by one and clear cache
+      const workspaceIds = workspaces.map((workspace) => workspace._id);
+
+      for (const workspaceId of workspaceIds) {
+        // Delete from database
+        await Workspace.findByIdAndDelete(workspaceId);
+
+        // Clear cache
+        const cacheKey = `workspace:${workspaceId}`;
+        await RedisService.clearCache(cacheKey);
+      }
+
+      return {
+        message: `${workspaceIds.length} workspace(s) deleted successfully.`,
+        deletedWorkspaces: workspaceIds,
+      };
+    } catch (error) {
+      console.error("Error deleting bulk workspaces:", error);
+      throw new Error("Failed to delete bulk workspaces.");
+    }
   }
 }
 

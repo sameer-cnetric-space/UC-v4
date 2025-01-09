@@ -1,5 +1,6 @@
 const Template = require("../models/template");
 const TemplateHandler = require("../handlers/template");
+const WorkspaceServices = require("./workspace");
 
 class TemplateService {
   //Get template by Id
@@ -127,13 +128,21 @@ class TemplateService {
       throw new Error(`Can't delete a preset template.`);
     }
 
+    // delete Template Workspaces as well
+    const deleteBulk = await WorkspaceServices.deleteBulkWorkspaces(
+      template_id,
+      user_id
+    );
+
     // Delete the template
     const deletedTemplate = await template.deleteOne();
 
-    // delete Template Workspaces as well
-
     // Return the ID of the deleted template
-    return deletedTemplate._id;
+    return {
+      message: "Template deleted successfully",
+      id: deletedTemplate._id,
+      workspaces: deleteBulk,
+    };
   }
 }
 
