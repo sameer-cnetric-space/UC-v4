@@ -64,8 +64,15 @@ const GET_ORDER_BY_ID_QUERY = gql`
           id
           name
           sku
+          featuredAsset {
+            preview
+          }
           trackInventory
-          stockOnHand
+          product {
+            featuredAsset {
+              preview
+            }
+          }
         }
         discounts {
           adjustmentSource

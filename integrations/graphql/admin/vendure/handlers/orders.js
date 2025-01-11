@@ -78,6 +78,9 @@ async function getOrderById(workspaceId, orderId) {
         sku: line.productVariant.sku,
         quantity: line.quantity,
         unitPrice: line.unitPriceWithTax / 100,
+        imageUrl: line.featuredAsset.preview
+          ? line.featuredAsset.preview
+          : line.product.featuredAsset.preview, // Extract product images
       })), // Extract detailed product information
       shippingAddress: data.order.shippingAddress || null,
       billingAddress: data.order.billingAddress || null,

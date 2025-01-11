@@ -10,7 +10,12 @@ class CommerceController {
       res.status(200).json({ products: productsList });
     } catch (error) {
       console.error("Error in getProductsList controller:", error);
-      res.status(500).json({ error: "Failed to fetch products list" });
+      res
+        .status(500)
+        .json({
+          error: "Failed to fetch products list",
+          message: error.message,
+        });
     }
   }
 
@@ -43,7 +48,12 @@ class CommerceController {
       res.status(200).json({ customers: customersList });
     } catch (error) {
       console.error("Error in getCustomersList controller:", error);
-      res.status(500).json({ error: "Failed to fetch customers list" });
+      res
+        .status(500)
+        .json({
+          error: "Failed to fetch customers list",
+          message: error.message,
+        });
     }
   }
 
@@ -61,7 +71,12 @@ class CommerceController {
         return res.status(404).json({ message: "Customer not found" });
       }
       console.error("Error in getCustomerById controller:", error);
-      return res.status(500).json({ error: "Failed to fetch customer by ID" });
+      return res
+        .status(500)
+        .json({
+          error: "Failed to fetch customer by ID",
+          message: error.message,
+        });
     }
   }
 
@@ -73,7 +88,9 @@ class CommerceController {
       res.status(200).json({ orders: ordersList });
     } catch (error) {
       console.error("Error in getOrdersList controller:", error);
-      res.status(500).json({ error: "Failed to fetch orders list" });
+      res
+        .status(500)
+        .json({ error: "Failed to fetch orders list", message: error.message });
     }
   }
 
@@ -88,7 +105,9 @@ class CommerceController {
         return res.status(404).json({ message: "Order not found" });
       }
       console.error("Error in getOrderById controller:", error);
-      return res.status(500).json({ error: "Failed to fetch order by ID" });
+      return res
+        .status(500)
+        .json({ error: "Failed to fetch order by ID", message: error.message });
     }
   }
 }
