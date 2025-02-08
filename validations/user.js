@@ -57,6 +57,9 @@ const registrationSchema = Joi.object({
     "string.uri": "Profile picture must be a valid URL.",
   }),
   is_active: Joi.boolean().default(true),
+  role: Joi.string()
+    .valid("super-admin", "org-admin", "template-admin", "workspace-admin")
+    .required(),
 });
 
 const loginSchema = Joi.object({

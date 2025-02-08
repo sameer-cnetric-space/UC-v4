@@ -13,6 +13,7 @@ class UserController {
         phone_number,
         profile_picture,
         is_active,
+        role,
       } = req.body;
 
       const newUser = await UserService.createUser({
@@ -24,6 +25,7 @@ class UserController {
         phone_number,
         profile_picture,
         is_active,
+        role,
       });
 
       return res.status(201).json({

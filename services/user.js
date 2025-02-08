@@ -39,6 +39,7 @@ class UserService {
       email,
       password,
       phone_number,
+      role,
       is_active,
       profile_picture,
     } = payload;
@@ -58,6 +59,7 @@ class UserService {
         profile_picture || "/public/assets/entities/user/defUser.jpg",
       is_active: is_active !== undefined ? is_active : true,
       salt,
+      role,
     });
 
     const newUser = await user.save();

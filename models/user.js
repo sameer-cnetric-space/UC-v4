@@ -89,6 +89,11 @@ const userSchema = new mongoose.Schema(
       required: true,
       select: false, // Exclude salt by default in queries
     },
+    role: {
+      type: String,
+      required: true,
+      enum: ["super-admin", "org-admin", "template-admin", "workspace-admin"],
+    },
   },
   { timestamps: true }
 );

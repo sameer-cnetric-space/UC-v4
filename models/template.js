@@ -34,10 +34,11 @@ const templateSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["Custom", "Preset"],
+      enum: ["Custom", "Express", "Standard", "Enterprise"],
       required: true,
       default: "Custom", // Default type
     },
+
     commerce_id: {
       type: String,
       required: true,

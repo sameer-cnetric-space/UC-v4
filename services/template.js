@@ -16,15 +16,17 @@ class TemplateService {
   // Get templates by Template ID and User ID, grouped by type
   static async getTemplatesByUserId(req, user_id) {
     // Query for preset templates
-    const presets = await Template.find({
-      type: "Preset",
-    }).select("-__v");
+    const presets = await Template.find({ type: { $ne: "Custom" } }) // Fetches all except "Custom"
+      .select("-__v")
+      .lean(); // Optimizes performance by returning plain objects
 
     // Query for custom templates
     const custom = await Template.find({
       user_id: user_id,
       type: "Custom",
-    });
+    })
+      .select("-__v")
+      .lean(); // Optimizes performance by returning plain objects;
 
     // Return an object containing both arrays
     return await TemplateHandler.formatTemplateDataList(req, presets, custom);

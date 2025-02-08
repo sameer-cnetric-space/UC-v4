@@ -14,6 +14,12 @@ const seedCMS = async () => {
         "A headless CMS offering API-driven content management and delivery for websites and applications.",
       image_url: "/public/assets/entities/cms/contentful.png",
     },
+    {
+      name: "HCL DX",
+      description:
+        "A digital experience platform that enables businesses to create, manage, and deliver engaging digital experiences.",
+      image_url: "/public/assets/entities/cms/hcl.png",
+    },
   ];
 
   try {

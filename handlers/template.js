@@ -56,20 +56,32 @@ class TemplateHandler {
           id: template._id,
           name: template.name,
           description: template.description,
-          bModel: bModelName.name,
+          bModel: bModelName?.name || null,
           stackIcons,
           createdAt: template.createdAt,
           updatedAt: template.updatedAt,
         };
       };
 
-      // Format both presets and custom templates
-      const formattedPresets = await Promise.all(presets.map(formatTemplate));
+      // Format presets and group by type
+      const groupedPresets = {
+        Express: [],
+        Standard: [],
+        Enterprise: [],
+      };
+
+      for (const template of presets) {
+        if (groupedPresets.hasOwnProperty(template.type)) {
+          groupedPresets[template.type].push(await formatTemplate(template));
+        }
+      }
+
+      // Format custom templates
       const formattedCustom = await Promise.all(custom.map(formatTemplate));
 
-      // Return final formatted object
+      // Return final structured object
       return {
-        presets: formattedPresets,
+        presets: groupedPresets,
         custom: formattedCustom,
       };
     } catch (error) {

@@ -2,7 +2,6 @@ const { seedBModels } = require("./bModels");
 const { seedCMS } = require("./cms");
 const { seedCommerce } = require("./commerce");
 const { seedPayments } = require("./payments");
-const { seedTemplates } = require("./templates");
 const { seedCRM } = require("./crm");
 const { seedSearch } = require("./search");
 
@@ -14,7 +13,7 @@ const seedDB = async () => {
   await seedPayments();
   await seedCRM();
   await seedSearch();
-  await seedTemplates();
+  await require("./templates").seedTemplates();
 
   console.log("Seeding completed!");
 };
