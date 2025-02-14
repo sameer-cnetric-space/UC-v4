@@ -69,9 +69,8 @@ const {
   templateSchema,
   templateUpdateSchema,
 } = require("../validations/templates");
-const workspaceRoutes = require("./workspace");
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true }); // Enable access to parent params
 
 // Fetch all templates for the authenticated user
 router.get("/", auth, TemplateController.getAllUserTemplates);
@@ -93,6 +92,5 @@ router.put(
 );
 
 router.delete("/:id", auth, TemplateController.deleteTemplate);
-router.use("/:id/workspaces", workspaceRoutes);
 
 module.exports = router;

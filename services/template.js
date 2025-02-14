@@ -35,7 +35,11 @@ class TemplateService {
   //Get all templates of a User
   static async userTemplate(template_id, user_id) {
     // First, try to find a preset template by ID
-    let template = await Template.findOne({ _id: template_id, type: "Preset" });
+    let template = await Template.findOne({
+      _id: template_id,
+      type: { $ne: "Custom" }, // Exclude "Custom" type
+    });
+
     // If no preset template is found, look for a custom template with user_id
     if (!template) {
       template = await Template.findOne({
@@ -48,7 +52,7 @@ class TemplateService {
   }
 
   //Create a Template
-  static async createTemplate(payload) {
+  static async createTemplate(orgId, payload) {
     const {
       name,
       description,
@@ -72,6 +76,7 @@ class TemplateService {
       type,
       bModel_id,
       user_id,
+      orgId,
     });
     const newTemplate = await template.save();
     const formattedRes = {
@@ -145,6 +150,17 @@ class TemplateService {
       id: deletedTemplate._id,
       workspaces: deleteBulk,
     };
+  }
+
+  static async addUserToTemplate(userId, templateId) {
+    const template = await Template.findById(templateId);
+    if (!template) {
+      throw new Error(`Template not found for ID: ${templateId}`);
+    }
+    //push the user to the template's users array
+    template.users.push(userId);
+    await template.save();
+    return template._id;
   }
 }
 

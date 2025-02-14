@@ -1,4 +1,6 @@
 const UserService = require("../services/user");
+const OrganizationService = require("../services/organization");
+const EmailService = require("../services/email");
 
 class UserController {
   // Register new User
@@ -76,17 +78,20 @@ class UserController {
   // Get User details
   static async getUserDetails(req, res) {
     try {
-      const user_id = req.userId;
+      const user = await UserService.getUserById(req, req.userId);
 
-      const user = await UserService.getUserById(req, user_id);
+      const orgs = await OrganizationService.getAllOrganizations(user._id);
 
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      return res.status(200).json({
-        me: user,
-      });
+      // Create a transformed user object (ensures immutability)
+      const { _id, ...rest } = user.toObject ? user.toObject() : user;
+      const transformedUser = { id: _id, ...rest };
+      transformedUser.orgs = orgs;
+
+      return res.status(200).json({ me: transformedUser });
     } catch (error) {
       return res.status(500).json({
         message: "Error fetching user data",
@@ -136,6 +141,80 @@ class UserController {
     } catch (error) {
       return res.status(500).json({
         message: "Error deleting user data",
+        error: error.message,
+      });
+    }
+  }
+
+  // Add User to Organization
+  static async addUserToOrganization(req, res) {
+    try {
+      const { organizationId } = req.params;
+      console.log(organizationId);
+      const currentUserRole = req.user.role;
+      const {
+        first_name,
+        last_name,
+        username,
+        email,
+        password,
+        phone_number,
+        is_active,
+        role,
+        entity,
+      } = req.body;
+
+      const user = await UserService.addUserToOrganization(
+        organizationId,
+        currentUserRole,
+        {
+          first_name,
+          last_name,
+          username,
+          email,
+          password,
+          phone_number,
+          is_active,
+          role,
+        },
+        entity
+      );
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      await EmailService.sendUserEmail(email, password, role);
+
+      return res.status(200).json({
+        message: "User added to organization successfully",
+        user,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        message: "Error adding user to organization",
+        error: error.message,
+      });
+    }
+  }
+
+  static async deleteOrgUser(req, res) {
+    try {
+      const { organizationId, userId } = req.params;
+      const user = await UserService.deleteUserFromOrganization(
+        organizationId,
+        userId
+      );
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      return res.status(200).json({
+        message: "User deleted from organization successfully",
+        user,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        message: "Error deleting user from organization",
         error: error.message,
       });
     }

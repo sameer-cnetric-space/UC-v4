@@ -8,12 +8,13 @@ class VendureClientHandler {
 
   static async getWorkspaceEnv(workspaceId) {
     const envData = await redisService.getEnv(workspaceId);
+    const ALLOWED_COMMERCE_TYPES = ["vendure", "universal commerce"];
 
     // Ensure necessary fields are available
     if (
       !envData ||
       !envData.commerce ||
-      envData.commerce.name.toLowerCase() !== "vendure" ||
+      !ALLOWED_COMMERCE_TYPES.includes(envData.commerce.name.toLowerCase()) ||
       !envData.commerce.adUsername ||
       !envData.commerce.adPassword ||
       !envData.commerce.baseUrl

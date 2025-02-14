@@ -4,6 +4,7 @@ class TemplateController {
   //Create a Template
   static async createTemplate(req, res) {
     try {
+      const { organizationId } = req.params;
       const {
         name,
         description,
@@ -16,7 +17,7 @@ class TemplateController {
         search_id,
       } = req.body;
 
-      const template = await TemplateService.createTemplate({
+      const template = await TemplateService.createTemplate(organizationId, {
         name,
         description,
         commerce_id,

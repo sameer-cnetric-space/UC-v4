@@ -1,6 +1,9 @@
 const AuthService = require("./auth");
 const User = require("../models/user");
 const { buildFileUrl } = require("../utils/buildUrl");
+const OrganizationService = require("./organization");
+const TemplateService = require("./template");
+const WorkspaceService = require("./workspace");
 
 class UserService {
   // Get User from ID
@@ -9,6 +12,13 @@ class UserService {
     if (!user) throw new Error("User not found");
 
     user.profile_picture = buildFileUrl(req, user.profile_picture);
+
+    return user;
+  }
+
+  static async getUserByIdNoImgUrl(id) {
+    const user = await User.findById(id).select("-password -salt -__v");
+    if (!user) throw new Error("User not found");
 
     return user;
   }
@@ -119,6 +129,98 @@ class UserService {
   //   const deletedUser = await User.findByIdAndDelete(id);
   //   if (!deletedUser) throw new Error("User not found");
   //   return deletedUser;
+  // }
+
+  static async getbulkUsers(ids) {
+    const users = await User.find({
+      _id: { $in: ids },
+    })
+      .select("_id first_name last_name email role is_active")
+      .lean();
+    if (users.length === 0) {
+      throw new Error(`No users found`);
+    }
+    const formattedRes = users.map((user) => ({
+      id: user._id,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      email: user.email,
+      role: user.role,
+      isActive: user.is_active,
+    }));
+    return formattedRes;
+  }
+
+  static async addUserToOrganization(
+    organizationId,
+    currentUserRole,
+    {
+      first_name,
+      last_name = "",
+      username,
+      email,
+      password,
+      phone_number,
+      profile_picture = "",
+      is_active = true,
+      role,
+    },
+    entity = {}
+  ) {
+    if (currentUserRole !== "super-admin" && role === "org-admin") {
+      throw new Error("Only super admins can add organization admins");
+    }
+    const user = await this.createUser({
+      first_name,
+      last_name,
+      username,
+      email,
+      password,
+      phone_number,
+      profile_picture,
+      is_active,
+      role,
+    });
+    // attach this user to the organization
+    const result = await OrganizationService.addUserToOrganization(
+      organizationId,
+      user.user.id
+    );
+
+    if (!result) {
+      throw new Error("Failed to add user to organization");
+    }
+
+    if (entity) {
+      switch (entity.type) {
+        // case "template":
+        //   await TemplateService.addUserToTemplate(user.user.id, entity.id);
+        //   break;
+
+        case "workspace":
+          const access = entity;
+          await WorkspaceService.addUserToWorkspace(
+            user.user.id,
+            entity.workspace_id
+          );
+
+          await User.findByIdAndUpdate(
+            user.user.id,
+            { $set: { access: access } },
+            { new: true }
+          );
+          break;
+        default:
+          throw new Error("Invalid entity type");
+      }
+    }
+    return user.user;
+  }
+
+  // static async deleteUserFromOrganization(orgId, userId) {
+  //   await OrganizationService.deleteUserFromOrganization(orgId, userId);
+
+  //   await this.deleteUser(userId);
   // }
 }
 

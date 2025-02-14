@@ -94,6 +94,10 @@ const userSchema = new mongoose.Schema(
       required: true,
       enum: ["super-admin", "org-admin", "template-admin", "workspace-admin"],
     },
+    access: {
+      type: Object,
+      default: () => ({}),
+    },
   },
   { timestamps: true }
 );

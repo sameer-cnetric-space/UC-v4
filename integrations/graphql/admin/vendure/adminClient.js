@@ -12,11 +12,15 @@ async function getVendureClient(workspaceId) {
     );
   }
 
+  const ALLOWED_COMMERCE_TYPES = ["vendure", "universal commerce"];
   // Parse the environment data
   const { commerce } = envData;
 
   // Validate the commerce type and essential fields
-  if (!commerce || commerce.name.toLowerCase() !== "vendure") {
+  if (
+    !commerce ||
+    !ALLOWED_COMMERCE_TYPES.includes(commerce.name.toLowerCase())
+  ) {
     throw new Error(`Workspace ${workspaceId} is not a Vendure workspace`);
   }
 

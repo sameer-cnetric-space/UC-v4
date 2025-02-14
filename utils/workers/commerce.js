@@ -6,7 +6,10 @@ class CommerceWorker {
     return commerce;
   }
   static async setCommerceData(commerce, data) {
-    if (commerce.name.toLowerCase() === "vendure") {
+    if (
+      commerce.name.toLowerCase() === "vendure" ||
+      commerce.name.toLowerCase() === "universal commerce"
+    ) {
       const res = {
         name: commerce.name,
         baseUrl: data.commerce.creds.domain,

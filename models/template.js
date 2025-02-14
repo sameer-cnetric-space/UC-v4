@@ -65,6 +65,10 @@ const templateSchema = new mongoose.Schema(
       type: String,
       required: false, // CRM is optional
     },
+    orgId: {
+      type: String,
+      //required: true,
+    },
     metadata: {
       type: mongoose.Schema.Types.Mixed,
       default: {}, // Flexible field for storing additional info

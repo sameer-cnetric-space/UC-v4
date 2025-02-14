@@ -97,14 +97,15 @@ class WorkspaceController {
    */
   static async createWorkspace(req, res) {
     try {
-      const { id } = req.params;
+      const { organizationId, templateId } = req.params;
       const user_id = req.userId; // Assuming userId is extracted from the token
 
       // Call the service to create the workspace
       const workspace = await WorkspaceServices.createWorkspace(
         req.body,
-        id,
-        user_id
+        templateId,
+        user_id,
+        organizationId
       );
 
       return res.status(201).json({

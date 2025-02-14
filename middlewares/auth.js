@@ -1,6 +1,6 @@
 const AuthServices = require("../services/auth");
-
-const authMiddleware = (req, res, next) => {
+const UserService = require("../services/user");
+const authMiddleware = async (req, res, next) => {
   const authHeader = req.header("Authorization");
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -13,7 +13,10 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = AuthServices.verifyToken(token);
-    req.userId = decoded.id;
+    const userId = decoded.id;
+    const user = await UserService.getUserByIdNoImgUrl(userId);
+    req.user = user;
+    req.userId = userId;
     next();
   } catch (error) {
     return res.status(401).json({

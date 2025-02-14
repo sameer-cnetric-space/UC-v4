@@ -83,7 +83,7 @@ class WorkspaceServices {
    * @param {String} template_id - Template ID
    * @param {String} user_id - User ID
    */
-  static async createWorkspace(payload, template_id, user_id) {
+  static async createWorkspace(payload, template_id, user_id, orgId) {
     try {
       {
         const {
@@ -124,6 +124,7 @@ class WorkspaceServices {
           },
           user_id,
           template_id,
+          orgId,
         };
 
         // Add optional CRM field if provided
@@ -350,6 +351,17 @@ class WorkspaceServices {
       console.error("Error deleting bulk workspaces:", error);
       throw new Error("Failed to delete bulk workspaces.");
     }
+  }
+
+  static async addUserToWorkspace(userId, workspaceId) {
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) {
+      throw new Error(`Workspace not found for ID: ${workspaceId}`);
+    }
+    //push the user to the Workspace's users array
+    workspace.users.push(userId);
+    await workspace.save();
+    return workspace._id;
   }
 }
 

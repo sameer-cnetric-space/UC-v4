@@ -9,7 +9,7 @@ const router = express.Router({ mergeParams: true }); // Enable access to parent
 
 router.post(
   "/",
-  authMiddleware,
+  // authMiddleware,
   // validate(workspaceSchema),
   WorkspaceController.createWorkspace
 );
