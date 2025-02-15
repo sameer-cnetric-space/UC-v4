@@ -15,6 +15,8 @@ class OrganizationService {
         id: org._id,
         name: org.name,
         description: org.description || "",
+        users: org.users.length,
+        createdAt: org.createdAt,
       }));
     } catch (error) {
       throw new Error(

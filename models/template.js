@@ -22,12 +22,12 @@ const templateSchema = new mongoose.Schema(
       trim: true,
       default: "An ideal starting point for your project design.",
     },
-    user_id: {
-      type: String,
-      required: function () {
-        return this.type === "Custom"; // Only required for custom templates
-      },
-    },
+    // user_id: {
+    //   type: String,
+    //   required: function () {
+    //     return this.type === "Custom"; // Only required for custom templates
+    //   },
+    // },
     bModel_id: {
       type: String,
       required: true,

@@ -15,8 +15,14 @@ class WorkspaceController {
         return res.status(404).json({ message: "Workspace not found" });
       }
 
+      // Create a transformed user object (ensures immutability)
+      const { _id, ...rest } = workspace.toObject
+        ? workspace.toObject()
+        : workspace;
+      const transformedWorkspace = { id: _id, ...rest };
+
       return res.status(200).json({
-        data: workspace,
+        workspace: transformedWorkspace,
       });
     } catch (error) {
       console.error("Error in getWorkspaceById:", error.message);
@@ -35,12 +41,13 @@ class WorkspaceController {
    */
   static async getWorkspaceByUserId(req, res) {
     try {
-      const { id } = req.params;
-      const user_id = req.userId; // Assuming userId is extracted from the token
+      const { organizationId, templateId } = req.params;
+      const user = req.user; // Assuming userId is extracted from the token
 
       const workspaces = await WorkspaceServices.getWorkspacesByUserId(
-        id, // template_id
-        user_id
+        organizationId,
+        templateId, // template_id
+        user
       );
 
       if (!workspaces) {

@@ -184,7 +184,7 @@ class UserController {
         return res.status(404).json({ message: "User not found" });
       }
 
-      await EmailService.sendUserEmail(email, password, role);
+      EmailService.sendUserEmail(email, password, role);
 
       return res.status(200).json({
         message: "User added to organization successfully",

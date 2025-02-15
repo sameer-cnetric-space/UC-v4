@@ -74,10 +74,10 @@ const workspaceSchema = new mongoose.Schema(
       type: String,
       default: "https://universalcomposer.com",
     },
-    user_id: {
-      type: String,
-      required: true,
-    },
+    // user_id: {
+    //   type: String,
+    //   required: true,
+    // },
     template_id: {
       type: String,
       required: true,

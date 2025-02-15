@@ -192,6 +192,7 @@ class UserService {
     }
 
     if (entity) {
+      entity.org_id = organizationId;
       switch (entity.type) {
         // case "template":
         //   await TemplateService.addUserToTemplate(user.user.id, entity.id);

@@ -2,6 +2,7 @@ const Workspace = require("../models/workspace");
 const TemplateService = require("./template");
 const { formatCommerce } = require("../utils/dataFormatter/redis/commerce");
 const RedisService = require("./redis"); // Import RedisService
+const Organization = require("../models/organization");
 //const { userTemplate } = require("./template"); //Avoid circular dependency
 
 class WorkspaceServices {
@@ -27,15 +28,23 @@ class WorkspaceServices {
 
   /**
    * Get Workspace by ID and User ID with caching
+   * @param {String} orgId - Organization ID
    * @param {String} template_id - Template ID
-   * @param {String} user_id - User ID
+   * @param {Object} user - User
    */
-  static async getWorkspacesByUserId(template_id, user_id) {
+  static async getWorkspacesByUserId(orgId, template_id, user) {
     try {
+      const user_id = user._id;
+
+      const org = await Organization.findById(orgId);
+      if (!org) {
+        throw new Error("Organization not found");
+      }
       // Query all workspaces based on template_id and user_id
       const workspaces = await Workspace.find({
         template_id,
-        user_id,
+        orgId,
+        users: { $in: [user_id] }, // Check if user_id exists in the users array
       }).select("_id name description");
 
       // Handle the case where no workspaces are found
@@ -93,6 +102,10 @@ class WorkspaceServices {
           composer_url = "https://universalcomposer.com", // Default composer_url
         } = payload;
 
+        const org = await Organization.findById(orgId);
+        if (!org) {
+          throw new Error("Organization not found");
+        }
         // Fetch template details  with circular dependency issue resolved
         const templateDetails = await (
           await require("./template")
@@ -122,7 +135,7 @@ class WorkspaceServices {
             search_id: templateDetails.search_id,
             creds: search,
           },
-          user_id,
+          users: [user_id],
           template_id,
           orgId,
         };

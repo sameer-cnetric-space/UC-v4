@@ -4,6 +4,7 @@ const WorkspaceController = require("../controllers/workspace");
 const validate = require("../middlewares/validate");
 const workspaceSchema = require("../validations/workspace");
 const commerceRoutes = require("./commerce/admin/index");
+const roleChecker = require("../middlewares/roleCheckers");
 
 const router = express.Router({ mergeParams: true }); // Enable access to parent params
 
@@ -11,27 +12,24 @@ router.post(
   "/",
   // authMiddleware,
   // validate(workspaceSchema),
+  roleChecker.templateAdminCheck,
   WorkspaceController.createWorkspace
 );
-router.get("/", authMiddleware, WorkspaceController.getWorkspaceByUserId);
 router.get(
-  "/:workspace_id",
-  authMiddleware,
-  WorkspaceController.getWorkspaceById
+  "/",
+  roleChecker.templateAdminCheck,
+  WorkspaceController.getWorkspaceByUserId
 );
-router.get(
-  "/:workspace_id/metrics",
-  authMiddleware,
-  WorkspaceController.getWorkspaceMetrics
-);
+router.get("/:workspace_id", WorkspaceController.getWorkspaceById);
+router.get("/:workspace_id/metrics", WorkspaceController.getWorkspaceMetrics);
 router.put(
   "/:workspace_id",
-  authMiddleware,
+  roleChecker.templateAdminCheck,
   WorkspaceController.updateWorkspace
 );
 router.delete(
   "/:workspace_id",
-  authMiddleware,
+  roleChecker.templateAdminCheck,
   WorkspaceController.deleteWorkspace
 );
 
