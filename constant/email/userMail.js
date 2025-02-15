@@ -1,4 +1,4 @@
-const userTemplate = async (email, password, role) => {
+const userTemplate = (email, password, role) => {
   // Email Subject
   const subject = "Your Account Credentials";
 
