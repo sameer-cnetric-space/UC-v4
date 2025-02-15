@@ -1,4 +1,5 @@
 const mailerClient = require("../config/email/mailer");
+const { userTemplate } = require("../constant/email/userMail");
 
 class EmailService {
   /**
@@ -42,34 +43,7 @@ class EmailService {
    * @param {string} role - User's assigned role.
    */
   static async sendUserEmail(email, password, role) {
-    const subject = "Your Account Credentials";
-    const text = `
-      Hello,
-
-      Your account has been created successfully. Below are your login credentials:
-
-      📧 Email: ${email}
-      🔑 Password: ${password}
-      🏷️ Role: ${role}
-
-      Please change your password upon first login.
-
-      Regards,
-      The Team
-    `;
-
-    const html = `
-      <h2>Welcome to UC Dashboard</h2>
-      <p>Your account has been created successfully. Below are your login credentials:</p>
-      <ul>
-        <li><strong>Email:</strong> ${email}</li>
-        <li><strong>Password:</strong> ${password}</li>
-        <li><strong>Role:</strong> ${role}</li>
-      </ul>
-      <p>⚠️ Please change your password upon first login.</p>
-      <br>
-      <p>Best regards,<br>The Team</p>
-    `;
+    const { subject, text, html } = userTemplate(email, password, role);
 
     return this.sendEmail({ to: email, subject, text, html });
   }
