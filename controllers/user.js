@@ -150,7 +150,6 @@ class UserController {
   static async addUserToOrganization(req, res) {
     try {
       const { organizationId } = req.params;
-      console.log(organizationId);
       const currentUserRole = req.user.role;
       const {
         first_name,

@@ -4,6 +4,7 @@ const { buildFileUrl } = require("../utils/buildUrl");
 const OrganizationService = require("./organization");
 const TemplateService = require("./template");
 const WorkspaceService = require("./workspace");
+const mongoose = require("mongoose");
 
 class UserService {
   // Get User from ID
@@ -151,6 +152,73 @@ class UserService {
     return formattedRes;
   }
 
+  // static async addUserToOrganization(
+  //   organizationId,
+  //   currentUserRole,
+  //   {
+  //     first_name,
+  //     last_name = "",
+  //     username,
+  //     email,
+  //     password,
+  //     phone_number,
+  //     profile_picture = "",
+  //     is_active = true,
+  //     role,
+  //   },
+  //   entity = {}
+  // ) {
+  //   if (currentUserRole !== "super-admin" && role === "org-admin") {
+  //     throw new Error("Only super admins can add organization admins");
+  //   }
+  //   const user = await this.createUser({
+  //     first_name,
+  //     last_name,
+  //     username,
+  //     email,
+  //     password,
+  //     phone_number,
+  //     profile_picture,
+  //     is_active,
+  //     role,
+  //   });
+  //   // attach this user to the organization
+  //   const result = await OrganizationService.addUserToOrganization(
+  //     organizationId,
+  //     user.user.id
+  //   );
+
+  //   if (!result) {
+  //     throw new Error("Failed to add user to organization");
+  //   }
+
+  //   if (entity) {
+  //     entity.org_id = organizationId;
+  //     switch (entity.type) {
+  //       // case "template":
+  //       //   await TemplateService.addUserToTemplate(user.user.id, entity.id);
+  //       //   break;
+
+  //       case "workspace":
+  //         const access = entity;
+  //         await WorkspaceService.addUserToWorkspace(
+  //           user.user.id,
+  //           entity.workspace_id
+  //         );
+
+  //         await User.findByIdAndUpdate(
+  //           user.user.id,
+  //           { $set: { access: access } },
+  //           { new: true }
+  //         );
+  //         break;
+  //       default:
+  //         throw new Error("Invalid entity type");
+  //     }
+  //   }
+  //   return user.user;
+  // }
+
   static async addUserToOrganization(
     organizationId,
     currentUserRole,
@@ -167,55 +235,96 @@ class UserService {
     },
     entity = {}
   ) {
-    if (currentUserRole !== "super-admin" && role === "org-admin") {
-      throw new Error("Only super admins can add organization admins");
-    }
-    const user = await this.createUser({
-      first_name,
-      last_name,
-      username,
-      email,
-      password,
-      phone_number,
-      profile_picture,
-      is_active,
-      role,
-    });
-    // attach this user to the organization
-    const result = await OrganizationService.addUserToOrganization(
-      organizationId,
-      user.user.id
-    );
+    const session = await mongoose.startSession();
+    session.startTransaction(); // ✅ Start Transaction
 
-    if (!result) {
-      throw new Error("Failed to add user to organization");
-    }
-
-    if (entity) {
-      entity.org_id = organizationId;
-      switch (entity.type) {
-        // case "template":
-        //   await TemplateService.addUserToTemplate(user.user.id, entity.id);
-        //   break;
-
-        case "workspace":
-          const access = entity;
-          await WorkspaceService.addUserToWorkspace(
-            user.user.id,
-            entity.workspace_id
-          );
-
-          await User.findByIdAndUpdate(
-            user.user.id,
-            { $set: { access: access } },
-            { new: true }
-          );
-          break;
-        default:
-          throw new Error("Invalid entity type");
+    try {
+      // ✅ Prevent unauthorized users from adding org-admins
+      if (currentUserRole !== "super-admin" && role === "org-admin") {
+        throw new Error("Only super admins can add organization admins.");
       }
+
+      // ✅ Validate the organization before proceeding
+      // const isOrgValid = await OrganizationService.validateOrganization(
+      //   organizationId
+      // );
+      // if (!isOrgValid) {
+      //   throw new Error("Invalid or non-existent organization.");
+      // }
+
+      // ✅ Create the user inside the transaction
+      const user = await this.createUser(
+        {
+          first_name,
+          last_name,
+          username,
+          email,
+          password,
+          phone_number,
+          profile_picture,
+          is_active,
+          role,
+        },
+        { session } // ✅ Ensure user creation is inside the transaction
+      );
+
+      // ✅ Attach user to the organization (inside the transaction)
+      const attachResult = await OrganizationService.addUserToOrganization(
+        organizationId,
+        user.user.id,
+        session
+      );
+
+      if (!attachResult) {
+        throw new Error("Failed to attach user to organization.");
+      }
+
+      // ✅ Handle entity assignment (Workspaces, Templates, etc.)
+      if (entity && entity.type) {
+        entity.org_id = organizationId;
+
+        switch (entity.type) {
+          case "workspace":
+            const access = entity;
+
+            // Run these in parallel using `Promise.all`
+            await Promise.all([
+              WorkspaceService.addUserToWorkspace(
+                user.user.id,
+                entity.workspace_id,
+                session
+              ),
+              User.findByIdAndUpdate(
+                user.user.id,
+                { $set: { access: access } },
+                { new: true, session }
+              ),
+            ]);
+            break;
+
+          default:
+            throw new Error("Invalid entity type.");
+        }
+      }
+
+      // ✅ Commit the transaction if everything succeeds
+      await session.commitTransaction();
+      session.endSession();
+
+      return user.user;
+    } catch (error) {
+      console.error("Error in addUserToOrganization:", error.message);
+
+      // 🚨 Rollback: Abort the transaction
+      await session.abortTransaction();
+      session.endSession();
+
+      // ✅ Delete user manually if it was created but the transaction failed
+      await User.deleteOne({ email });
+
+      console.log("Transaction rolled back. User creation reverted.");
+      throw new Error(error.message || "Failed to add user to organization.");
     }
-    return user.user;
   }
 
   // static async deleteUserFromOrganization(orgId, userId) {

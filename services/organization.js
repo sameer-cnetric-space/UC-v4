@@ -108,14 +108,23 @@ class OrganizationService {
     }
   }
 
-  static async addUserToOrganization(organizationId, userId) {
+  static async addUserToOrganization(organizationId, userId, session = null) {
     try {
-      const organization = await Organization.findOne({ _id: organizationId });
+      // ✅ Find organization inside transaction
+      const organization = await Organization.findOne({
+        _id: organizationId,
+      }).session(session);
+
       if (!organization) {
         throw new Error(`Organization not found`);
       }
+
+      // ✅ Push user to organization
       organization.users.push(userId);
-      await organization.save();
+
+      // ✅ Save organization inside transaction
+      await organization.save({ session });
+
       return true;
     } catch (error) {
       throw new Error(
