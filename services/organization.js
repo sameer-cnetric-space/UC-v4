@@ -6,7 +6,9 @@ class OrganizationService {
     try {
       const organizations = await Organization.find({
         users: { $in: [userId] },
-      }).lean();
+      })
+        .sort({ createdAt: -1 }) // Sort by createdAt in descending order (-1 for descending, 1 for ascending)
+        .lean();
       if (organizations.length === 0) {
         throw new Error(`No organizations found for user ${userId}`);
       }
@@ -37,12 +39,27 @@ class OrganizationService {
       const users = await (
         await require("../services/user")
       ).getbulkUsers(organization.users);
+
+      //order by super-admin > org-admin > template-admin > workspace-admin
+      // Define role hierarchy for sorting
+      const roleHierarchy = {
+        "super-admin": 1,
+        "org-admin": 2,
+        "template-admin": 3,
+        "workspace-admin": 4,
+      };
+
+      // Sort users based on role priority (ascending order)
+      const sortedUsers = users.sort((a, b) => {
+        return (roleHierarchy[a.role] || 999) - (roleHierarchy[b.role] || 999);
+      });
+
       const formattedRes = {
         id: organization._id,
         name: organization.name,
         description: organization.description || "",
         isActive: organization.is_active,
-        users,
+        users: sortedUsers,
       };
       return formattedRes;
     } catch (error) {
