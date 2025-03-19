@@ -2,28 +2,30 @@ const Organization = require("../models/organization");
 const UserService = require("./user");
 
 class OrganizationService {
-  static async getAllOrganizations(userId) {
+  static async getAllOrganizations(userId, path = "") {
     try {
-      const organizations = await Organization.find({
-        users: { $in: [userId] },
-      })
-        .sort({ createdAt: -1 }) // Sort by createdAt in descending order (-1 for descending, 1 for ascending)
-        .lean();
-      if (organizations.length === 0) {
-        throw new Error(`No organizations found for user ${userId}`);
+      const organizations = await Organization.find(
+        { users: userId },
+        { _id: 1, name: 1, description: 1, users: 1, createdAt: 1 }
+      ).sort({ createdAt: -1 });
+
+      if (!organizations.length) {
+        if (path !== "/me")
+          throw new Error(`No organizations found for user ${userId}`);
+        return [];
       }
-      //return only id name and description
-      return organizations.map((org) => ({
-        id: org._id,
-        name: org.name,
-        description: org.description || "",
-        users: org.users.length,
-        createdAt: org.createdAt,
-      }));
-    } catch (error) {
-      throw new Error(
-        `Failed to fetch organizations for user ${userId}: ${error.message}`
+
+      return organizations.map(
+        ({ _id, name, description, users, createdAt }) => ({
+          id: _id,
+          name,
+          description: description || "",
+          users: users.length,
+          createdAt,
+        })
       );
+    } catch (error) {
+      throw new Error(`Error fetching organizations: ${error.message}`);
     }
   }
 

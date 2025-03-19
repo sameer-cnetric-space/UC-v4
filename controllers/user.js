@@ -80,7 +80,10 @@ class UserController {
     try {
       const user = await UserService.getUserById(req, req.userId);
 
-      const orgs = await OrganizationService.getAllOrganizations(user._id);
+      const orgs = await OrganizationService.getAllOrganizations(
+        user._id,
+        req.path
+      );
 
       if (!user) {
         return res.status(404).json({ message: "User not found" });

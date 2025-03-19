@@ -4,6 +4,7 @@ const crm = require("../models/crm");
 const payments = require("../models/payments");
 const search = require("../models/search");
 const bModel = require("../models/bModel");
+const Themes = require("../models/themes");
 const { buildFileUrl } = require("../utils/buildUrl");
 
 class EntityService {
@@ -65,6 +66,20 @@ class EntityService {
     } catch (error) {
       console.error("Error in EntityService.getEntityById:", error.message);
       throw error;
+    }
+  }
+
+  static async getThemes(req) {
+    try {
+      const themes = await Themes.find();
+      return themes.map((theme) => ({
+        id: theme.id,
+        name: theme.name,
+        image_url: buildFileUrl(req, theme.image_url),
+      }));
+    } catch (error) {
+      console.error("Error in EntityService.getThemes:", error.message);
+      throw new Error("Failed to fetch themes");
     }
   }
 }

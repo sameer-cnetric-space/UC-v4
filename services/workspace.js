@@ -1,4 +1,5 @@
 const Workspace = require("../models/workspace");
+const Themes = require("../models/themes");
 const TemplateService = require("./template");
 const { formatCommerce } = require("../utils/dataFormatter/redis/commerce");
 const RedisService = require("./redis"); // Import RedisService
@@ -100,6 +101,7 @@ class WorkspaceServices {
           description = "Streamline your operations with this all-in-one workspace.", // Default  description
           creds: { commerce, cms, crm, payment, search }, // Destructure credentials
           composer_url = "https://universalcomposer.com", // Default composer_url
+          theme_id,
         } = payload;
 
         const org = await Organization.findById(orgId);
@@ -114,6 +116,11 @@ class WorkspaceServices {
           throw new Error("Template not found");
         }
 
+        //Check theme and find that
+        const themeDetails = await Themes.findById(theme_id);
+        if (!themeDetails) {
+          throw new Error("Theme not found");
+        }
         // Construct workspace object
         const workspaceData = {
           name,
@@ -134,6 +141,10 @@ class WorkspaceServices {
           search: {
             search_id: templateDetails.search_id,
             creds: search,
+          },
+          theme: {
+            theme_id: themeDetails._id,
+            name: themeDetails.name,
           },
           users: [user_id],
           template_id,

@@ -52,6 +52,27 @@ class EntityController {
       });
     }
   }
+
+  /**
+   * Fetch all themes.
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
+  static async getThemes(req, res) {
+    try {
+      const themes = await EntityService.getThemes(req);
+      return res.status(200).json({
+        themes,
+      });
+    } catch (error) {
+      console.error("Error in ThemeController.getThemes:", error.message);
+      return res.status(500).json({
+        status: "error",
+        message: "Failed to fetch themes",
+        error: error.message,
+      });
+    }
+  }
 }
 
 module.exports = EntityController;

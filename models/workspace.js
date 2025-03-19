@@ -70,6 +70,14 @@ const workspaceSchema = new mongoose.Schema(
         required: true,
       },
     },
+    theme: {
+      theme_id: {
+        type: String,
+      },
+      name: {
+        type: String,
+      },
+    },
     composer_url: {
       type: String,
       default: "https://universalcomposer.com",
