@@ -84,11 +84,14 @@ class VendureClientHandler {
   // Create and return an authenticated Apollo Client for Vendure
   static async getVendureClient(workspaceId) {
     const envData = await this.getWorkspaceEnv(workspaceId);
-    const token = await this.getToken(workspaceId);
+    //const token = await this.getToken(workspaceId);
 
-    return createApolloClient(`${envData.commerce.baseUrl}/admin-api`, {
-      Authorization: `Bearer ${token}`,
-    });
+    return createApolloClient(
+      `${envData.commerce.baseUrl}/shop-api`
+      //   {
+      //   Authorization: `Bearer ${token}`,
+      // }
+    );
   }
 
   // Make an authenticated request with automatic retry on `FORBIDDEN` error

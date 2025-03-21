@@ -3,7 +3,8 @@ const authMiddleware = require("../middlewares/auth");
 const WorkspaceController = require("../controllers/workspace");
 const validate = require("../middlewares/validate");
 const workspaceSchema = require("../validations/workspace");
-const commerceRoutes = require("./commerce/admin/index");
+const adminCommerceRoutes = require("./commerce/admin/index");
+const shopCommerceRoutes = require("./commerce/shop/index");
 const roleChecker = require("../middlewares/roleCheckers");
 
 const router = express.Router({ mergeParams: true }); // Enable access to parent params
@@ -36,6 +37,7 @@ router.delete(
 /*
 Commerce Routes
 */
-router.use("/:workspace_id/commerce", commerceRoutes);
+router.use("/:workspace_id/commerce/admin", adminCommerceRoutes);
+router.use("/:workspace_id/commerce/shop", shopCommerceRoutes);
 
 module.exports = router;
