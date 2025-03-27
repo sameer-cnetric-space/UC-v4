@@ -62,7 +62,7 @@ class TemplateService {
       crm_id,
       payment_ids,
       search_id,
-      user_id,
+      // user_id,
     } = payload;
     const type = "Custom";
     const template = new Template({
@@ -75,7 +75,7 @@ class TemplateService {
       search_id,
       type,
       bModel_id,
-      user_id,
+      //user_id,
       orgId,
     });
     const newTemplate = await template.save();

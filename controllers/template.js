@@ -27,7 +27,7 @@ class TemplateController {
         search_id,
         type,
         bModel_id,
-        user_id: req.userId,
+        //user_id: req.userId,
       });
 
       return res.status(201).json({
