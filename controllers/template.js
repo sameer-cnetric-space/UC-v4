@@ -65,10 +65,12 @@ class TemplateController {
 
   //Get all User's Template
   static async getAllUserTemplates(req, res) {
+    const { organizationId } = req.params;
     try {
       const templates = await TemplateService.getTemplatesByUserId(
         req,
-        req.userId
+        //req.userId
+        organizationId
       );
 
       if (!templates) {

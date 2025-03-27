@@ -23,9 +23,9 @@ function createApolloClient(baseURL, headers = {}) {
 
   // Error handling link
   const errorLink = onError(({ graphQLErrors, networkError }) => {
-    if (graphQLErrors) {
-      console.error("GraphQL Errors:", graphQLErrors);
-    }
+    // if (graphQLErrors) {
+    //   console.error("GraphQL Errors:", graphQLErrors);
+    // }
     if (networkError) {
       console.error("Network Error:", networkError);
     }

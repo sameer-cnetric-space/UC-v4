@@ -1,24 +1,29 @@
 const LOGIN_MUTATION = `
-  mutation Login($username: String!, $password: String!, $rememberMe: Boolean) {
-    login(username: $username, password: $password, rememberMe: $rememberMe) {
-      ... on CurrentUser {
+  mutation Login($email: String!, $password: String!) {
+  login(username: $email, password: $password) {
+    ... on CurrentUser {
+      id
+      identifier
+      channels {
         id
-        identifier
-      }
-      ... on InvalidCredentialsError {
-        message
-        errorCode
-      }
-      ... on NativeAuthStrategyError {
-        message
-        errorCode
+        token
       }
     }
+    ... on InvalidCredentialsError {
+      errorCode
+      message
+      authenticationError
+    }
+    ... on NotVerifiedError {
+      errorCode
+      message
+    }
   }
-`;
+}
+ `;
 
-const adminAuth = {
+const customerAuth = {
   LOGIN_MUTATION,
 };
 
-module.exports = adminAuth;
+module.exports = customerAuth;
