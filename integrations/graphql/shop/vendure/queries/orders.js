@@ -21,6 +21,11 @@ const GET_ORDERS_QUERY = gql`
               featuredAsset {
                 preview
               }
+              product {
+                featuredAsset {
+                  preview
+                }
+              }
             }
           }
         }
@@ -52,6 +57,11 @@ const GET_ORDER_BY_ID_QUERY = gql`
           priceWithTax
           featuredAsset {
             preview
+          }
+          product {
+            featuredAsset {
+              preview
+            }
           }
           currencyCode
         }

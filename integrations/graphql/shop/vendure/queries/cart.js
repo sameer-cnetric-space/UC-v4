@@ -12,8 +12,13 @@ const GET_ACTIVE_CART_QUERY = gql`
           id
           name
           priceWithTax
-          featuredAsset{
+          featuredAsset {
             preview
+          }
+          product {
+            featuredAsset {
+              preview
+            }
           }
           currencyCode
         }
@@ -77,7 +82,7 @@ const REMOVE_ORDER_LINE_MUTATION = gql`
             }
             product {
               assets {
-              preview
+                preview
               }
             }
             currencyCode
@@ -93,7 +98,7 @@ const REMOVE_ORDER_LINE_MUTATION = gql`
       }
     }
   }
-`
+`;
 
 const ADJUST_ORDER_LINE_MUTATION = gql`
   mutation AdjustOrderLine($orderLineId: ID!, $quantity: Int!) {
@@ -146,10 +151,10 @@ const ADJUST_ORDER_LINE_MUTATION = gql`
 `;
 
 const shopCart = {
-    GET_ACTIVE_CART_QUERY,
-    ADD_ITEM_TO_CART_MUTATION,
-    REMOVE_ORDER_LINE_MUTATION,
-    ADJUST_ORDER_LINE_MUTATION,
+  GET_ACTIVE_CART_QUERY,
+  ADD_ITEM_TO_CART_MUTATION,
+  REMOVE_ORDER_LINE_MUTATION,
+  ADJUST_ORDER_LINE_MUTATION,
 };
-  
+
 module.exports = shopCart;

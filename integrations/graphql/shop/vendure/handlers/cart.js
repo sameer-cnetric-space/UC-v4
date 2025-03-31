@@ -27,7 +27,10 @@ async function getActiveCart(workspaceId, customerToken) {
           price: line.productVariant.priceWithTax / 100,
           currencyCode: line.productVariant.currencyCode,
           featuredAsset: {
-            url: line.productVariant.featuredAsset.preview,
+            url:
+              line.productVariant.featuredAsset?.preview ||
+              line.productVariant.product.featuredAsset?.preview ||
+              null,
           },
         },
       })),
@@ -75,10 +78,10 @@ async function addItemToCart(
           currencyCode: line.productVariant.currencyCode,
           images: [
             ...line.productVariant.product.assets.map((asset) => ({
-              url: asset.preview,
+              url: asset?.preview || null,
             })),
             ...line.productVariant.assets.map((asset) => ({
-              url: asset.preview,
+              url: asset?.preview || null,
             })),
           ],
         },
@@ -126,10 +129,10 @@ async function removeOrderLine(workspaceId, orderLineId, customerToken) {
           currencyCode: line.productVariant.currencyCode,
           images: [
             ...line.productVariant.product.assets.map((asset) => ({
-              url: asset.preview,
+              url: asset?.preview || null,
             })),
             ...line.productVariant.assets.map((asset) => ({
-              url: asset.preview,
+              url: asset?.preview || null,
             })),
           ],
         },
@@ -182,10 +185,10 @@ async function adjustOrderLine(
           currencyCode: line.productVariant.currencyCode,
           images: [
             ...line.productVariant.product.assets.map((asset) => ({
-              url: asset.preview,
+              url: asset?.preview || null,
             })),
             ...line.productVariant.assets.map((asset) => ({
-              url: asset.preview,
+              url: asset?.preview || null,
             })),
           ],
         },

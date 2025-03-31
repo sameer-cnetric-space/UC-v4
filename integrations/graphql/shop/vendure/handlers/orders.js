@@ -55,7 +55,10 @@ async function getOrders(workspaceId, customerToken) {
           name: line.productVariant.name,
           priceWithTax: line.productVariant.priceWithTax / 100,
           featuredAsset: {
-            preview: line.productVariant.featuredAsset.preview,
+            url:
+              line.productVariant.featuredAsset?.preview ||
+              line.productVariant.product.featuredAsset?.preview ||
+              null,
           },
         },
       })),
@@ -105,7 +108,10 @@ async function getOrderById(workspaceId, orderId, customerToken) {
           name: line.productVariant.name,
           priceWithTax: line.productVariant.priceWithTax / 100,
           featuredAsset: {
-            preview: line.productVariant.featuredAsset.preview,
+            url:
+              line.productVariant.featuredAsset?.preview ||
+              line.productVariant.product.featuredAsset?.preview ||
+              null,
           },
         },
       })),
