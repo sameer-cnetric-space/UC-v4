@@ -163,7 +163,9 @@ async function getProductsFromCollection(workspaceId, collectionId) {
     );
 
     if (!data.data.collection) {
-      throw new Error(`No product found in collection with ID ${collectionId}`);
+      throw new Error(
+        `No products found in collection with ID ${collectionId}`
+      );
     }
 
     // Modify and standardize the products in the response

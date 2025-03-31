@@ -1,5 +1,6 @@
 const VendureClientHandler = require("./client");
 const adminCustomersQuery = require("../queries/customers");
+const authQuery = require("../queries/auth");
 const redisService = require("../../../../../services/redis");
 
 async function getCustomers(workspaceId) {
@@ -98,7 +99,47 @@ async function getCustomerById(workspaceId, customerId) {
   }
 }
 
+async function createCustomer(workspaceId, payload) {
+  try {
+    // Make an authenticated request using VendureClientHandler's automatic re-authentication
+    const data = await VendureClientHandler.makeAuthenticatedRequest(
+      workspaceId,
+      authQuery.REGISTER_MUTATION,
+      {
+        input: {
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+          emailAddress: payload.email,
+          phoneNumber: payload.phoneNumber,
+        },
+        password: payload.password,
+      },
+      "mutation"
+    );
+
+    if (data.createCustomer.errorCode === "EMAIL_ADDRESS_CONFLICT_ERROR") {
+      throw new Error("Email address already exists");
+    }
+
+    const response = {
+      message: "Signup successful",
+      data: {
+        userId: data.createCustomer.id,
+        name:
+          data.createCustomer.firstName + " " + data.createCustomer.lastName,
+        email: data.createCustomer.emailAddress,
+      },
+    };
+
+    return response;
+  } catch (error) {
+    // console.error("Error in getCustomerById:", error);
+    throw new Error("Failed to fetch customer details : " + error.message);
+  }
+}
+
 module.exports = {
   getCustomers,
   getCustomerById,
+  createCustomer,
 };

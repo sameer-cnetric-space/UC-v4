@@ -1,9 +1,9 @@
 const VendureClientHandler = require("./client");
-const adminOrdersQuery = require("../queries/orders");
+const shopOrdersQuery = require("../queries/orders");
 //const redisService = require("../../../../../services/redis");
 
-async function getOrders(workspaceId) {
-  const ordersCacheKey = `workspace:${workspaceId}:ordersList`;
+async function getOrders(workspaceId, customerToken) {
+  //const ordersCacheKey = `workspace:${workspaceId}:ordersList`;
 
   try {
     // Try to retrieve orders list from Redis cache
@@ -15,32 +15,60 @@ async function getOrders(workspaceId) {
     // Make an authenticated request using VendureClientHandler's automatic re-authentication
     const data = await VendureClientHandler.makeAuthenticatedRequest(
       workspaceId,
-      adminOrdersQuery.GET_ORDERS_QUERY
+      shopOrdersQuery.GET_ORDERS_QUERY,
+      {
+        options: {
+          filter: {
+            active: {
+              eq: false,
+            },
+          },
+          sort: {
+            id: "DESC",
+          },
+        },
+      },
+      customerToken
     );
 
+    //if()
+    // console.log(customerToken);
+    // console.log(data);
+
+    if (!data.activeCustomer || !data.activeCustomer?.orders) {
+      throw new Error(`Orders not found`);
+    }
+
     // Standardize the orders data format
-    const standardizedOrders = data.orders.items.map((item) => ({
+    const standardizedOrders = data.activeCustomer.orders.items.map((item) => ({
       id: item.id,
-      status: item.state,
+      state: item.state,
       orderPlacedAt: item.orderPlacedAt || null,
       totalWithTax: item.totalWithTax / 100,
-      customer: item.customer
-        ? `${item.customer.firstName} ${item.customer.lastName}`
-        : null, // Handle null customer
-      products: item.lines.map((line) => line.productVariant.name), // Extract product names
+      currencyCode: item.currencyCode,
+      lines: item.lines.map((line) => ({
+        id: line.id,
+        linePriceWithTax: line.linePriceWithTax / 100,
+        quantity: line.quantity,
+        productVariant: {
+          id: line.productVariant.id,
+          name: line.productVariant.name,
+          priceWithTax: line.productVariant.priceWithTax / 100,
+          featuredAsset: {
+            preview: line.productVariant.featuredAsset.preview,
+          },
+        },
+      })),
     }));
-
-    // Cache the standardized orders list in Redis for 300 seconds (5 minutes)
-    //await redisService.setCache(ordersCacheKey, standardizedOrders, 300);
 
     return standardizedOrders;
   } catch (error) {
-    console.error("Error in getOrders:", error);
-    throw new Error("Failed to fetch orders list");
+    //console.error("Error in getOrders:", error);
+    throw new Error("Failed to fetch orders list : " + error.message);
   }
 }
 
-async function getOrderById(workspaceId, orderId) {
+async function getOrderById(workspaceId, orderId, customerToken) {
   //const orderCacheKey = `workspace:${workspaceId}:order:${orderId}`;
 
   try {
@@ -53,8 +81,9 @@ async function getOrderById(workspaceId, orderId) {
     // Make an authenticated request using VendureClientHandler's automatic re-authentication
     const data = await VendureClientHandler.makeAuthenticatedRequest(
       workspaceId,
-      adminOrdersQuery.GET_ORDER_BY_ID_QUERY,
-      { id: orderId }
+      shopOrdersQuery.GET_ORDER_BY_ID_QUERY,
+      { orderId: orderId },
+      customerToken
     );
 
     if (!data.order) {
@@ -63,27 +92,23 @@ async function getOrderById(workspaceId, orderId) {
 
     // Standardize the order data format
     const standardizedOrder = {
-      id: data.order.id,
-      status: data.order.state,
-      orderPlacedAt: data.order.orderPlacedAt || null,
+      ...data.order,
+      subTotalWithTax: data.order.subTotalWithTax / 100,
+      shippingWithTax: data.order.shippingWithTax / 100,
       totalWithTax: data.order.totalWithTax / 100,
-      customer: data.order.customer
-        ? {
-            id: data.order.customer.id,
-            name: `${data.order.customer.firstName} ${data.order.customer.lastName}`,
-          }
-        : null, // Handle null customer
-      products: data.order.lines.map((line) => ({
-        name: line.productVariant.name,
-        sku: line.productVariant.sku,
+      lines: data.order.lines.map((line) => ({
+        id: line.id,
+        linePriceWithTax: line.linePriceWithTax / 100,
         quantity: line.quantity,
-        unitPrice: line.unitPriceWithTax / 100,
-        imageUrl: line.featuredAsset.preview
-          ? line.featuredAsset.preview
-          : line.product.featuredAsset.preview, // Extract product images
-      })), // Extract detailed product information
-      shippingAddress: data.order.shippingAddress || null,
-      billingAddress: data.order.billingAddress || null,
+        productVariant: {
+          id: line.productVariant.id,
+          name: line.productVariant.name,
+          priceWithTax: line.productVariant.priceWithTax / 100,
+          featuredAsset: {
+            preview: line.productVariant.featuredAsset.preview,
+          },
+        },
+      })),
     };
 
     // Cache the standardized order details in Redis for 300 seconds (5 minutes)

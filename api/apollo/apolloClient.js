@@ -11,6 +11,8 @@ const fetch = require("cross-fetch");
 // Function to create an Apollo Client instance
 function createApolloClient(baseURL, headers = {}) {
   // Middleware to dynamically add headers
+  // console.log(baseURL);
+  // console.log(headers);
   const authMiddleware = new ApolloLink((operation, forward) => {
     operation.setContext(({ headers: existingHeaders }) => ({
       headers: {

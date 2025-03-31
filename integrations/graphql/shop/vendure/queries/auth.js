@@ -22,8 +22,27 @@ const LOGIN_MUTATION = `
 }
  `;
 
+const REGISTER_MUTATION = `
+mutation CreateCustomer($input: CreateCustomerInput!, $password: String) {
+  createCustomer(input: $input, password: $password) {
+    ... on Customer {
+      id
+      firstName
+      lastName
+      phoneNumber
+      emailAddress
+    }
+    ... on EmailAddressConflictError {
+      errorCode
+      message
+    }
+  }
+}
+`
+
 const customerAuth = {
   LOGIN_MUTATION,
+  REGISTER_MUTATION,
 };
 
 module.exports = customerAuth;

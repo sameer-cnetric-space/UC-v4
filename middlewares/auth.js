@@ -1,6 +1,9 @@
 const AuthServices = require("../services/auth");
 const UserService = require("../services/user");
 const authMiddleware = async (req, res, next) => {
+  if (req.path.includes("/shop/")) {
+    return next();
+  }
   const authHeader = req.header("Authorization");
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {

@@ -92,11 +92,20 @@ class VendureClientHandler {
   }
 
   // Make an authenticated request with automatic retry on `FORBIDDEN` error
-  static async makeAuthenticatedRequest(workspaceId, query, variables = {}) {
+  static async makeAuthenticatedRequest(
+    workspaceId,
+    query,
+    variables = {},
+    operation = "query"
+  ) {
     let client = await this.getVendureClient(workspaceId);
 
     try {
-      const response = await client.query({ query, variables });
+      const response =
+        operation === "mutation"
+          ? await client.mutate({ mutation: query, variables })
+          : await client.query({ query: query, variables });
+
       return response.data;
     } catch (error) {
       // Check if the error is a `FORBIDDEN` error

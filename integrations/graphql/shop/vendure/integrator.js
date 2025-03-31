@@ -1,11 +1,19 @@
 const productHandler = require("./handlers/products");
 const orderHandler = require("./handlers/orders");
+const customerHandler = require("./handlers/customer");
+const authHandler = require("./handlers/auth");
+const cartHandler = require("./handlers/cart");
+const checkoutHandler = require("./handlers/checkout");
 
 class Integrator {
   constructor() {
     this.handlers = {
       products: productHandler,
       orders: orderHandler,
+      customers: customerHandler,
+      auth: authHandler,
+      cart: cartHandler,
+      checkout: checkoutHandler,
     };
   }
 

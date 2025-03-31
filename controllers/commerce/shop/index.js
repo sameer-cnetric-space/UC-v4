@@ -54,14 +54,15 @@ class CommerceController {
   }
 
   // Controller method to get a single customer by ID
-  async getCustomerById(req, res) {
+  async activeCustomer(req, res) {
     try {
-      const { workspace_id, customerId } = req.params;
-      const customer = await commerceService.getCustomerById(
+      const { workspace_id } = req.params;
+      const customerToken = req.headers["token"];
+      const customer = await commerceService.getActiveCustomer(
         workspace_id,
-        customerId
+        customerToken
       );
-      return res.status(200).json({ customer });
+      return res.status(200).json(customer);
     } catch (error) {
       if (error.message.includes("not found")) {
         return res.status(404).json({ message: "Customer not found" });
@@ -74,14 +75,173 @@ class CommerceController {
     }
   }
 
+  async customerLogin(req, res) {
+    try {
+      const { workspace_id } = req.params;
+      const { email, password } = req.body;
+      const customer = await commerceService.getCustomerToken(workspace_id, {
+        email,
+        password,
+      });
+      return res.status(200).json(customer);
+    } catch (error) {
+      if (error.message.includes("Invalid credentials")) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      //console.error("Error in getCustomerById controller:", error);
+      return res.status(500).json({
+        error: "Failed to login",
+        message: error.message,
+      });
+    }
+  }
+
+  async registerCustomer(req, res) {
+    try {
+      const { workspace_id } = req.params;
+      const payload = req.body;
+      const customer = await commerceService.registerCustomer(
+        workspace_id,
+        payload
+      );
+      return res.status(201).json(customer);
+    } catch (error) {
+      //console.error("Error in registerCustomer controller:", error);
+      if (error.message.includes("already exists")) {
+        return res.status(409).json({ message: "Email already registered" });
+      }
+
+      return res.status(500).json({
+        error: "Failed to login",
+        message: error.message,
+      });
+    }
+  }
+
+  async getCart(req, res) {
+    try {
+      const workspaceId = req.params.workspace_id;
+      const customerToken = req.headers["token"];
+      const cart = await commerceService.getCustomerCart(
+        workspaceId,
+        customerToken
+      );
+      res.status(200).json(cart);
+    } catch (error) {
+      //console.error("Error in cart controller:", error);
+      if (error.message.includes("not found")) {
+        return res.status(404).json({ message: "Cart not found" });
+      }
+      res
+        .status(500)
+        .json({ error: "Failed to fetch cart", message: error.message });
+    }
+  }
+
+  async addToCart(req, res) {
+    try {
+      const workspaceId = req.params.workspace_id;
+      const customerToken = req.headers["token"];
+      const payload = req.body;
+      const cart = await commerceService.addToCustomerCart(
+        workspaceId,
+        payload,
+        customerToken
+      );
+      res.status(201).json(cart);
+    } catch (error) {
+      //console.error("Error in cart controller:", error);
+
+      res
+        .status(500)
+        .json({ error: "Failed to fetch cart", message: error.message });
+    }
+  }
+
+  async updateCart(req, res) {
+    try {
+      const workspaceId = req.params.workspace_id;
+      const customerToken = req.headers["token"];
+      const payload = req.body;
+      const cart = await commerceService.updateCustomerCart(
+        workspaceId,
+        payload,
+        customerToken
+      );
+      res.status(200).json(cart);
+    } catch (error) {
+      //console.error("Error in cart controller:", error);
+
+      if (error.message.includes("not found")) {
+        return res.status(404).json({ message: "Cart not found" });
+      }
+      res
+        .status(500)
+        .json({ error: "Failed to fetch cart", message: error.message });
+    }
+  }
+
+  async removeFromCart(req, res) {
+    try {
+      const workspaceId = req.params.workspace_id;
+      const customerToken = req.headers["token"];
+      const { orderLineId } = req.body;
+      const cart = await commerceService.removeFromCustomerCart(
+        workspaceId,
+        orderLineId,
+        customerToken
+      );
+      res.status(200).json(cart);
+    } catch (error) {
+      //console.error("Error in cart controller:", error);
+
+      if (error.message.includes("not found")) {
+        return res.status(404).json({ message: "Cart not found" });
+      }
+      res
+        .status(500)
+        .json({ error: "Failed to fetch cart", message: error.message });
+    }
+  }
+
+  async checkout(req, res) {
+    try {
+      const workspaceId = req.params.workspace_id;
+      const customerToken = req.headers["token"];
+      const payload = req.body;
+      const checkout = await commerceService.customerCheckout(
+        workspaceId,
+        payload,
+        customerToken
+      );
+      res.status(200).json(checkout);
+    } catch (error) {
+      //console.error("Error in cart controller:", error);
+
+      if (error.message.includes("not found")) {
+        return res.status(404).json({ message: "Cart not found" });
+      }
+      res
+        .status(500)
+        .json({ error: "Failed to checkout", message: error.message });
+    }
+  }
+
   // Controller method to get orders list
   async getOrdersList(req, res) {
     try {
       const workspaceId = req.params.workspace_id;
-      const ordersList = await commerceService.getOrdersList(workspaceId);
+      const customerToken = req.headers["token"];
+      const ordersList = await commerceService.getOrdersList(
+        workspaceId,
+        customerToken
+      );
       res.status(200).json({ orders: ordersList });
     } catch (error) {
-      console.error("Error in getOrdersList controller:", error);
+      //console.error("Error in getOrdersList controller:", error);
+      if (error.message.includes("not found")) {
+        return res.status(404).json({ message: "Orders not found" });
+      }
       res
         .status(500)
         .json({ error: "Failed to fetch orders list", message: error.message });
@@ -92,7 +252,13 @@ class CommerceController {
   async getOrderById(req, res) {
     try {
       const { workspace_id, orderId } = req.params;
-      const order = await commerceService.getOrderById(workspace_id, orderId);
+      const customerToken = req.headers["token"];
+
+      const order = await commerceService.getOrderById(
+        workspace_id,
+        orderId,
+        customerToken
+      );
       return res.status(200).json({ order });
     } catch (error) {
       if (error.message.includes("not found")) {

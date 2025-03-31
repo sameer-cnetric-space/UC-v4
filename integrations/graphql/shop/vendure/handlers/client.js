@@ -82,41 +82,67 @@ class VendureClientHandler {
   }
 
   // Create and return an authenticated Apollo Client for Vendure
-  static async getVendureClient(workspaceId) {
+  static async getVendureClient(workspaceId, token = null) {
     const envData = await this.getWorkspaceEnv(workspaceId);
-    //const token = await this.getToken(workspaceId);
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    // console.log(token);
+    // console.log(headers);
 
-    return createApolloClient(
-      `${envData.commerce.baseUrl}/shop-api`
-      //   {
-      //   Authorization: `Bearer ${token}`,
-      // }
-    );
+    return createApolloClient(`${envData.commerce.baseUrl}/shop-api`, headers);
+  }
+
+  static async getVendureClientRest(workspaceId, payload) {
+    const envData = await this.getWorkspaceEnv(workspaceId);
+    const response = await requestREST({
+      method: "POST",
+      url: `${envData.commerce.baseUrl}/shop-api`,
+      data: payload,
+      headers: { "Content-Type": "application/json" },
+    });
+
+    // console.log(response.data);
+    // console.log(response.headers);
+    return {
+      data: response.data,
+      headers: response.headers,
+    };
   }
 
   // Make an authenticated request with automatic retry on `FORBIDDEN` error
-  static async makeAuthenticatedRequest(workspaceId, query, variables = {}) {
-    let client = await this.getVendureClient(workspaceId);
+  static async makeAuthenticatedRequest(
+    workspaceId,
+    queryOrPayload,
+    variables = {},
+    token = null,
+    operation = "query",
+    type = "graphql"
+  ) {
+    let attempt = 0;
+    const maxRetries = 1;
+    while (attempt < maxRetries) {
+      try {
+        if (type === "graphql") {
+          let client = await this.getVendureClient(workspaceId, token);
 
-    try {
-      const response = await client.query({ query, variables });
-      return response.data;
-    } catch (error) {
-      // Check if the error is a `FORBIDDEN` error
-      if (error?.cause?.extensions?.code === "FORBIDDEN") {
-        console.log("Token expired, re-authenticating...");
+          const response =
+            operation === "mutation"
+              ? await client.mutate({ mutation: queryOrPayload, variables })
+              : await client.query({ query: queryOrPayload, variables });
 
-        // Re-authenticate and update the token in Redis
-        await this.login(workspaceId);
+          return response.data;
+        } else if (type === "rest") {
+          const payloadForRest = {
+            query: queryOrPayload,
+            variables: variables,
+          };
+          return await this.getVendureClientRest(workspaceId, payloadForRest);
+        }
 
-        // Create a new client with the updated token
-        client = await this.getVendureClient(workspaceId);
-
-        // Retry the request with the new client
-        const retryResponse = await client.query({ query, variables });
-        return retryResponse.data;
-      } else {
-        throw error; // Propagate other errors
+        throw new Error("Invalid request type. Use 'graphql' or 'rest'.");
+      } catch (error) {
+        // Check if it's a FORBIDDEN error
+        console.error("Request failed:", error.message || error);
+        throw error;
       }
     }
   }

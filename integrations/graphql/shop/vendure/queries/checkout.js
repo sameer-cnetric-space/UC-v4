@@ -91,7 +91,7 @@ const SET_ORDER_SHIPPING_ADDRESS_MUTATION = gql`
 `;
 
 const TRANSITION_ORDER_STATE_MUTATION = gql`
-  mutation TransitionOrderToState ($state: String!) {
+  mutation TransitionOrderToState($state: String!) {
     transitionOrderToState(state: $state) {
       ... on Order {
         id
@@ -122,76 +122,73 @@ const TRANSITION_ORDER_STATE_MUTATION = gql`
 `;
 
 const ADD_PAYMENT_TO_ORDER_MUTATION = gql`
-  mutation { addPaymentToOrder(input:{
-      method:"connected-payment-method"
-      metadata:{}
-    })
-  {
-    ... on Order {
-      id
-      code
-      type
-      state
-      active
-      billingAddress {
-        country
-        postalCode
-        province
-        streetLine1
-        streetLine2
+  mutation AddPaymentToOrder($method: String!, $metadata: JSON!) {
+    addPaymentToOrder(input: { method: $method, metadata: $metadata }) {
+      ... on Order {
+        id
+        code
+        type
+        state
+        active
+        billingAddress {
+          country
+          postalCode
+          province
+          streetLine1
+          streetLine2
+        }
+        totalQuantity
+        totalWithTax
+        subTotalWithTax
+        shippingWithTax
+        customer {
+          firstName
+          phoneNumber
+          emailAddress
+        }
+        orderPlacedAt
       }
-      totalQuantity
-      totalWithTax
-      subTotalWithTax
-      shippingWithTax
-      customer {
-        firstName
-        phoneNumber
-        emailAddress
+      ... on OrderPaymentStateError {
+        errorCode
+        message
       }
-      orderPlacedAt
-    }
-    ... on OrderPaymentStateError {
-      errorCode
-      message
-    }
-    ... on IneligiblePaymentMethodError {
-      errorCode
-      message
-      eligibilityCheckerMessage
-    }
-    ... on PaymentFailedError {
-      errorCode
-      message
-      paymentErrorMessage
-    }
-    ... on PaymentDeclinedError {
-      errorCode
-      message
-      paymentErrorMessage
-    }
-    ... on OrderStateTransitionError {
-      errorCode
-      message
-      transitionError
-      fromState
-      toState
-    }
-    ... on NoActiveOrderError {
-      errorCode
-      message
+      ... on IneligiblePaymentMethodError {
+        errorCode
+        message
+        eligibilityCheckerMessage
+      }
+      ... on PaymentFailedError {
+        errorCode
+        message
+        paymentErrorMessage
+      }
+      ... on PaymentDeclinedError {
+        errorCode
+        message
+        paymentErrorMessage
+      }
+      ... on OrderStateTransitionError {
+        errorCode
+        message
+        transitionError
+        fromState
+        toState
+      }
+      ... on NoActiveOrderError {
+        errorCode
+        message
+      }
     }
   }
-}
 `;
 
 const shopCheckout = {
-    GET_ELIGIBLE_SHIPPING_METHODS_QUERY,
-    SET_SHIPPING_METHOD_MUTATION,
-    SET_ORDER_BILLING_ADDRESS_MUTATION,
-    SET_ORDER_SHIPPING_ADDRESS_MUTATION,
-    TRANSITION_ORDER_STATE_MUTATION,
-    ADD_PAYMENT_TO_ORDER_MUTATION,
+  GET_ELIGIBLE_SHIPPING_METHODS_QUERY,
+  SET_SHIPPING_METHOD_MUTATION,
+  SET_ORDER_BILLING_ADDRESS_MUTATION,
+  SET_ORDER_SHIPPING_ADDRESS_MUTATION,
+  TRANSITION_ORDER_STATE_MUTATION,
+  ADD_PAYMENT_TO_ORDER_MUTATION,
 };
-  
+
 module.exports = shopCheckout;
