@@ -1,8 +1,8 @@
 const gql = require("graphql-tag");
 
 const GET_ORDERS_QUERY = gql`
-  query Orders {
-    orders {
+  query Orders($options: OrderListOptions) {
+    orders(options: $options) {
       totalItems
       items {
         id
