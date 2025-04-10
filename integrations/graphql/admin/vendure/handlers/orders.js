@@ -15,7 +15,19 @@ async function getOrders(workspaceId) {
     // Make an authenticated request using VendureClientHandler's automatic re-authentication
     const data = await VendureClientHandler.makeAuthenticatedRequest(
       workspaceId,
-      adminOrdersQuery.GET_ORDERS_QUERY
+      adminOrdersQuery.GET_ORDERS_QUERY,
+      {
+        options: {
+          filter: {
+            active: {
+              eq: false,
+            },
+          },
+          sort: {
+            id: "DESC",
+          },
+        },
+      }
     );
 
     // Standardize the orders data format
