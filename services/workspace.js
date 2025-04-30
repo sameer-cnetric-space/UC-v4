@@ -288,7 +288,7 @@ class WorkspaceServices {
   static async deleteWorkspace(template_id, workspace_id, user_id) {
     const deletedWorkspace = await Workspace.findOneAndDelete({
       _id: workspace_id,
-      user_id,
+      users: user_id, // Matches if user_id is in the users array
       template_id,
     });
 

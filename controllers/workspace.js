@@ -136,12 +136,12 @@ class WorkspaceController {
    */
   static async updateWorkspace(req, res) {
     try {
-      const { id, workspace_id } = req.params;
+      const { templateId, workspace_id } = req.params;
       const user_id = req.userId; // Assuming userId is extracted from the token
 
       const updatedWorkspace = await WorkspaceServices.updateWorkspace(
         req.body,
-        id,
+        templateId,
         workspace_id,
         user_id
       );
@@ -175,11 +175,11 @@ class WorkspaceController {
    */
   static async deleteWorkspace(req, res) {
     try {
-      const { id, workspace_id } = req.params;
+      const { templateId, workspace_id } = req.params;
       const user_id = req.userId; // Assuming userId is extracted from the token
 
       const deletedWorkspace = await WorkspaceServices.deleteWorkspace(
-        id,
+        templateId,
         workspace_id,
         user_id
       );
