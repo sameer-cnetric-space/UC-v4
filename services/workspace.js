@@ -4,6 +4,7 @@ const TemplateService = require("./template");
 const { formatCommerce } = require("../utils/dataFormatter/redis/commerce");
 const RedisService = require("./redis"); // Import RedisService
 const Organization = require("../models/organization");
+const WorkspaceHandler = require("../handlers/workspace");
 //const { userTemplate } = require("./template"); //Avoid circular dependency
 
 class WorkspaceServices {
@@ -21,10 +22,12 @@ class WorkspaceServices {
 
     // Fetch from database if not cached
     const workspace = await Workspace.findById(id);
+    const formattedData = await WorkspaceHandler.formatWorkspaceData(workspace);
+
     // if (workspace) {
     //   await RedisService.setCache(cacheKey, workspace); // Cache workspace
     // }
-    return workspace;
+    return formattedData;
   }
 
   /**
