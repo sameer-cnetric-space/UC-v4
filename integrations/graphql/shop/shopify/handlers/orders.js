@@ -3,6 +3,7 @@ const shopOrdersQuery = require("../queries/orders");
 
 async function getOrders(workspaceId, customerToken) {
   try {
+    console.log(customerToken);
     const data = await ShopifyClientHandler.makeAuthenticatedRequest(
       workspaceId,
       shopOrdersQuery.GET_ORDERS_QUERY,
@@ -10,6 +11,7 @@ async function getOrders(workspaceId, customerToken) {
         customerAccessToken: customerToken,
       }
     );
+    console.log(JSON.stringify(data));
 
     const orders = data?.customer?.orders?.edges || [];
 

@@ -4,7 +4,7 @@ const gql = require("graphql-tag");
 const GET_ORDERS_QUERY = gql`
   query GetCustomerOrders($customerAccessToken: String!) {
     customer(customerAccessToken: $customerAccessToken) {
-      orders(first: 50) {
+      orders(first: 100) {
         edges {
           node {
             id
@@ -19,7 +19,6 @@ const GET_ORDERS_QUERY = gql`
             lineItems(first: 100) {
               edges {
                 node {
-                  id
                   quantity
                   title
                   originalTotalPrice {
@@ -35,7 +34,7 @@ const GET_ORDERS_QUERY = gql`
                       url
                     }
                     product {
-                      images(first: 1) {
+                      images(first: 10) {
                         edges {
                           node {
                             url
@@ -72,7 +71,6 @@ const GET_ORDER_BY_ID_QUERY = gql`
         lineItems(first: 100) {
           edges {
             node {
-              id
               title
               quantity
               originalTotalPrice {
@@ -88,7 +86,7 @@ const GET_ORDER_BY_ID_QUERY = gql`
                   url
                 }
                 product {
-                  images(first: 1) {
+                  images(first: 10) {
                     edges {
                       node {
                         url
