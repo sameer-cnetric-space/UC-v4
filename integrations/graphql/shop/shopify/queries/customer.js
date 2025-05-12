@@ -1,35 +1,19 @@
 const gql = require("graphql-tag");
 
 const USER_DETAILS = gql`
-{
-  activeCustomer{
-    id
-    firstName
-    lastName
-    phoneNumber
-    emailAddress
-    addresses{
+  query CustomerQuery($customerAccessToken: String!) {
+    customer(customerAccessToken: $customerAccessToken) {
       id
-      fullName
-      company
-      streetLine1
-      streetLine2
-      city
-      province
-      postalCode
-      country{
-        name
-      }
-      phoneNumber
-      defaultBillingAddress
-      defaultShippingAddress
+      firstName
+      lastName
+      email
+      phone
     }
   }
-}
 `;
 
 const customerDetails = {
-    USER_DETAILS,
+  USER_DETAILS,
 };
 
 module.exports = customerDetails;

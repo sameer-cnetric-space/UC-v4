@@ -1,13 +1,35 @@
-const integrator = require("../../../integrations/graphql/shop/vendure/integrator");
+const RedisService = require("../../redis");
 
 class CommerceService {
   constructor() {
-    this.integrator = integrator;
+    this.integrators = {
+      vendure: require("../../../integrations/graphql/shop/vendure/integrator"),
+      shopify: require("../../../integrations/graphql/shop/shopify/integrator"),
+    };
+
+    // Will be dynamically assigned per workspace
+    this.integrator = null;
+  }
+
+  // Dynamically set the integrator based on workspace
+  async setIntegrator(workspaceId) {
+    const env = await RedisService.getEnv(workspaceId);
+    let provider = env?.commerce?.name?.toLowerCase();
+    if (provider === "universal commerce") {
+      provider = "vendure";
+    }
+
+    if (!provider || !this.integrators[provider]) {
+      throw new Error(`Unsupported or missing commerce provider: ${provider}`);
+    }
+
+    this.integrator = this.integrators[provider];
   }
 
   // Fetches products list with caching via the products handler
   async getProductsList(workspaceId) {
     try {
+      await this.setIntegrator(workspaceId);
       const productsList = await this.integrator.execute(
         "products",
         "getProducts",
@@ -23,6 +45,8 @@ class CommerceService {
   // Fetches a single product by ID via the products handler
   async getProductById(workspaceId, productId) {
     try {
+      await this.setIntegrator(workspaceId);
+
       const product = await this.integrator.execute(
         "products",
         "getProductById",
@@ -39,6 +63,8 @@ class CommerceService {
   // Fetches customers list via the customers handler
   async getCustomersList(workspaceId) {
     try {
+      await this.setIntegrator(workspaceId);
+
       const customersList = await this.integrator.execute(
         "customers",
         "getCustomers",
@@ -54,6 +80,8 @@ class CommerceService {
   // Fetches a single customer by ID via the customers handler
   async getActiveCustomer(workspaceId, token) {
     try {
+      await this.setIntegrator(workspaceId);
+
       const customer = await this.integrator.execute(
         "customers",
         "getUserDetails",
@@ -69,6 +97,8 @@ class CommerceService {
 
   async getCustomerToken(workspaceId, payload) {
     try {
+      await this.setIntegrator(workspaceId);
+
       const login = await this.integrator.execute(
         "auth",
         "customerLogin",
@@ -84,6 +114,8 @@ class CommerceService {
 
   async registerCustomer(workspaceId, payload) {
     try {
+      await this.setIntegrator(workspaceId);
+
       const register = await this.integrator.execute(
         "auth",
         "customerRegister",
@@ -97,13 +129,16 @@ class CommerceService {
     }
   }
 
-  async getCustomerCart(workspaceId, customerToken) {
+  async getCustomerCart(workspaceId, customerToken, extraArgs) {
     try {
+      await this.setIntegrator(workspaceId);
+
       const cart = await this.integrator.execute(
         "cart",
         "getActiveCart",
         workspaceId,
-        customerToken
+        customerToken,
+        extraArgs
       );
       return cart;
     } catch (error) {
@@ -112,14 +147,17 @@ class CommerceService {
     }
   }
 
-  async addToCustomerCart(workspaceId, payload, customerToken) {
+  async createCustomerCart(workspaceId, payload, customerToken, extraArgs) {
     try {
+      await this.setIntegrator(workspaceId);
+
       const cart = await this.integrator.execute(
         "cart",
-        "addItemToCart",
+        "createCart",
         workspaceId,
         payload,
-        customerToken
+        customerToken,
+        extraArgs
       );
       return cart;
     } catch (error) {
@@ -128,14 +166,36 @@ class CommerceService {
     }
   }
 
-  async updateCustomerCart(workspaceId, payload, customerToken) {
+  async addToCustomerCart(workspaceId, payload, customerToken, extraArgs) {
     try {
+      await this.setIntegrator(workspaceId);
+
+      const cart = await this.integrator.execute(
+        "cart",
+        "addItemToCart",
+        workspaceId,
+        payload,
+        customerToken,
+        extraArgs
+      );
+      return cart;
+    } catch (error) {
+      //console.error("Error in getOrdersList:", error);
+      throw new Error("Failed to add to cart : " + error.message);
+    }
+  }
+
+  async updateCustomerCart(workspaceId, payload, customerToken, extraArgs) {
+    try {
+      await this.setIntegrator(workspaceId);
+
       const cart = await this.integrator.execute(
         "cart",
         "adjustOrderLine",
         workspaceId,
         payload,
-        customerToken
+        customerToken,
+        extraArgs
       );
       return cart;
     } catch (error) {
@@ -144,14 +204,22 @@ class CommerceService {
     }
   }
 
-  async removeFromCustomerCart(workspaceId, orderLineId, customerToken) {
+  async removeFromCustomerCart(
+    workspaceId,
+    orderLineId,
+    customerToken,
+    extraArgs
+  ) {
     try {
+      await this.setIntegrator(workspaceId);
+
       const cart = await this.integrator.execute(
         "cart",
         "removeOrderLine",
         workspaceId,
         orderLineId,
-        customerToken
+        customerToken,
+        extraArgs
       );
       return cart;
     } catch (error) {
@@ -160,14 +228,17 @@ class CommerceService {
     }
   }
 
-  async customerCheckout(workspaceId, payload, customerToken) {
+  async customerCheckout(workspaceId, payload, customerToken, extraArgs) {
     try {
+      await this.setIntegrator(workspaceId);
+
       const cart = await this.integrator.execute(
         "checkout",
         "processFullCheckout",
         workspaceId,
         payload,
-        customerToken
+        customerToken,
+        extraArgs
       );
       return cart;
     } catch (error) {
@@ -179,6 +250,8 @@ class CommerceService {
   // Fetches orders list via the orders handler
   async getOrdersList(workspaceId, customerToken) {
     try {
+      await this.setIntegrator(workspaceId);
+
       const ordersList = await this.integrator.execute(
         "orders",
         "getOrders",
@@ -195,6 +268,8 @@ class CommerceService {
   // Fetches a single order by ID via the orders handler
   async getOrderById(workspaceId, orderId, customerToken) {
     try {
+      await this.setIntegrator(workspaceId);
+
       const order = await this.integrator.execute(
         "orders",
         "getOrderById",

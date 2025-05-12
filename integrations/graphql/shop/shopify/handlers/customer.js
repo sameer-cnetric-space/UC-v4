@@ -1,23 +1,27 @@
-const VendureClientHandler = require("./client");
+const ShopifyClientHandler = require("./client");
 const shopOrdersQuery = require("../queries/customer");
 
 async function getUserDetails(workspaceId, customerToken) {
   try {
-    // Make an authenticated request using VendureClientHandler's automatic re-authentication
-    const data = await VendureClientHandler.makeAuthenticatedRequest(
+    const data = await ShopifyClientHandler.makeAuthenticatedRequest(
       workspaceId,
       shopOrdersQuery.USER_DETAILS,
-      {},
-      customerToken
+      { customerAccessToken: customerToken }
     );
 
-    // Modify and standardize the products in the response
-    const userDetails = data.activeCustomer;
+    const userDetails = data.customer;
+
+    if (!userDetails) {
+      throw new Error("Customer not found or token invalid.");
+    }
+
     const standardizedUserDetails = {
       id: userDetails.id,
-      emailAddress: userDetails.emailAddress,
-      name: userDetails.firstName + " " + userDetails.lastName,
-      phoneNumber: userDetails.phoneNumber,
+      emailAddress: userDetails.email,
+      name: `${userDetails.firstName || ""} ${
+        userDetails.lastName || ""
+      }`.trim(),
+      phoneNumber: userDetails.phone || null,
     };
 
     return {

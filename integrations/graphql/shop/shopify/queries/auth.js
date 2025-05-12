@@ -1,44 +1,43 @@
-const LOGIN_MUTATION = `
-  mutation Login($email: String!, $password: String!) {
-  login(username: $email, password: $password) {
-    ... on CurrentUser {
-      id
-      identifier
-      channels {
-        id
-        token
+const gql = require("graphql-tag");
+
+const LOGIN_MUTATION = gql`
+  mutation LoginCustomer($email: String!, $password: String!) {
+    customerAccessTokenCreate(input: { email: $email, password: $password }) {
+      customerAccessToken {
+        accessToken
+        expiresAt
+      }
+      customerUserErrors {
+        code
+        field
+        message
+      }
+      userErrors {
+        field
+        message
       }
     }
-    ... on InvalidCredentialsError {
-      errorCode
-      message
-      authenticationError
-    }
-    ... on NotVerifiedError {
-      errorCode
-      message
-    }
   }
-}
- `;
+`;
 
-const REGISTER_MUTATION = `
-mutation CreateCustomer($input: CreateCustomerInput!, $password: String) {
-  createCustomer(input: $input, password: $password) {
-    ... on Customer {
-      id
-      firstName
-      lastName
-      phoneNumber
-      emailAddress
-    }
-    ... on EmailAddressConflictError {
-      errorCode
-      message
+const REGISTER_MUTATION = gql`
+  mutation CustomerCreate($input: CustomerCreateInput!) {
+    customerCreate(input: $input) {
+      customer {
+        id
+        email
+        firstName
+        lastName
+        phone
+      }
+      customerUserErrors {
+        code
+        field
+        message
+      }
     }
   }
-}
-`
+`;
 
 const customerAuth = {
   LOGIN_MUTATION,

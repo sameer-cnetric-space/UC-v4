@@ -111,6 +111,10 @@ class CommerceController {
         return res.status(409).json({ message: "Email already registered" });
       }
 
+      if (error.message.includes("registration failed")) {
+        return res.status(400).json({ message: error.message });
+      }
+
       return res.status(500).json({
         error: "Failed to login",
         message: error.message,
@@ -122,9 +126,12 @@ class CommerceController {
     try {
       const workspaceId = req.params.workspace_id;
       const customerToken = req.headers["token"];
+      const extraArgs = { cartId: req.query.cartId };
+
       const cart = await commerceService.getCustomerCart(
         workspaceId,
-        customerToken
+        customerToken,
+        extraArgs
       );
       res.status(200).json(cart);
     } catch (error) {
@@ -137,16 +144,37 @@ class CommerceController {
         .json({ error: "Failed to fetch cart", message: error.message });
     }
   }
+  async createCart(req, res) {
+    try {
+      const workspaceId = req.params.workspace_id;
+      const customerToken = req.headers["token"];
+      const payload = req.body;
+      const cart = await commerceService.createCustomerCart(
+        workspaceId,
+        payload,
+        customerToken
+      );
+      res.status(201).json(cart);
+    } catch (error) {
+      //console.error("Error in cart controller:", error);
+
+      res
+        .status(500)
+        .json({ error: "Failed to fetch cart", message: error.message });
+    }
+  }
 
   async addToCart(req, res) {
     try {
       const workspaceId = req.params.workspace_id;
       const customerToken = req.headers["token"];
       const payload = req.body;
+      const extraArgs = { cartId: req.query.cartId };
       const cart = await commerceService.addToCustomerCart(
         workspaceId,
         payload,
-        customerToken
+        customerToken,
+        extraArgs
       );
       res.status(201).json(cart);
     } catch (error) {
@@ -163,10 +191,12 @@ class CommerceController {
       const workspaceId = req.params.workspace_id;
       const customerToken = req.headers["token"];
       const payload = req.body;
+      const extraArgs = { cartId: req.query.cartId };
       const cart = await commerceService.updateCustomerCart(
         workspaceId,
         payload,
-        customerToken
+        customerToken,
+        extraArgs
       );
       res.status(200).json(cart);
     } catch (error) {
@@ -185,11 +215,14 @@ class CommerceController {
     try {
       const workspaceId = req.params.workspace_id;
       const customerToken = req.headers["token"];
+      const extraArgs = { cartId: req.query.cartId };
+
       const { orderLineId } = req.body;
       const cart = await commerceService.removeFromCustomerCart(
         workspaceId,
         orderLineId,
-        customerToken
+        customerToken,
+        extraArgs
       );
       res.status(200).json(cart);
     } catch (error) {
@@ -209,10 +242,13 @@ class CommerceController {
       const workspaceId = req.params.workspace_id;
       const customerToken = req.headers["token"];
       const payload = req.body;
+      const extraArgs = { cartId: req.query.cartId };
+
       const checkout = await commerceService.customerCheckout(
         workspaceId,
         payload,
-        customerToken
+        customerToken,
+        extraArgs
       );
       res.status(200).json(checkout);
     } catch (error) {

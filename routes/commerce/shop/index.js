@@ -21,6 +21,7 @@ router.get("/orders/:orderId", commerceController.getOrderById);
 
 // Define routes for cart
 router.get("/cart", commerceController.getCart);
+router.post("/cart/create", commerceController.createCart);
 router.post("/cart", commerceController.addToCart);
 router.put("/cart", commerceController.updateCart);
 router.delete("/cart", commerceController.removeFromCart);

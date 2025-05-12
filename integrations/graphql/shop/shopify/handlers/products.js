@@ -1,41 +1,43 @@
 const shopProductsQuery = require("../queries/products");
-const VendureClientHandler = require("./client");
+const ShopifyClientHandler = require("./client");
 // const redisService = require("../../../../../services/redis");
 
 // Function to fetch and standardize product data with caching for productsList in a separate key with 60-second TTL
 async function getProducts(workspaceId) {
   try {
-    // Make an authenticated request using VendureClientHandler's automatic re-authentication
-    const data = await VendureClientHandler.makeAuthenticatedRequest(
+    // Make an authenticated request using ShopifyClientHandler's automatic re-authentication
+    const data = await ShopifyClientHandler.makeAuthenticatedRequest(
       workspaceId,
       shopProductsQuery.GET_PRODUCTS_QUERY
     );
 
     // Modify and standardize the products in the response
-    const standardizedProducts = data.products.items.map((item) => ({
-      id: item.id,
-      name: item.name,
-      imageUrl: item.featuredAsset ? item.featuredAsset.preview : null,
-      facetValues: item.facetValues.map((facet) => facet.name),
-      collections: item.collections.map((collection) => ({
-        id: collection.id,
-        name: collection.name,
-      })),
-      optionGroups: item.optionGroups.map((group) => ({
-        name: group.name,
-        options: group.options.map((option) => option.name),
-      })),
-      variants: item.variants.map((variant) => ({
-        id: variant.id,
-        name: variant.name,
-        currencyCode: variant.currencyCode,
-        priceWithTax: variant.priceWithTax / 100,
-        imageUrl: variant.featuredAsset ? variant.featuredAsset.preview : [],
-      })),
-    }));
+    const standardizedProducts = data.products.edges.map(
+      ({ node: product }) => ({
+        id: product.id,
+        name: product.title,
+        imageUrl: product.featuredImage?.url || null,
+        facetValues: product.tags || [],
+        collections: product.collections.edges.map(({ node: collection }) => ({
+          id: collection.id,
+          name: collection.title,
+        })),
+        optionGroups: product.options.map((group) => ({
+          name: group.name,
+          options: group.values,
+        })),
+        variants: product.variants.edges.map(({ node: variant }) => ({
+          id: variant.id,
+          name: variant.title,
+          currencyCode: variant.price.currencyCode,
+          priceWithTax: parseFloat(variant.price.amount), // Assuming tax is included or calculated elsewhere
+          imageUrl: variant.image?.url || null,
+        })),
+      })
+    );
 
     return {
-      totalItems: data.products.totalItems,
+      totalItems: data.products.edges.length,
       items: standardizedProducts,
     };
   } catch (error) {
@@ -48,44 +50,45 @@ async function getProducts(workspaceId) {
 async function getProductById(workspaceId, productId) {
   try {
     // Make an authenticated request for a specific product by ID
-    const data = await VendureClientHandler.makeAuthenticatedRequest(
+    const data = await ShopifyClientHandler.makeAuthenticatedRequest(
       workspaceId,
       shopProductsQuery.GET_PRODUCT_BY_ID_QUERY,
       {
-        productId,
+        id: productId,
       }
     );
 
-    if (!data.product) {
-      throw new Error(`Product with ID ${productId} not found`);
+    // Standardize the product data format
+    const product = data.node;
+
+    if (!product || product.__typename !== "Product") {
+      throw new Error("Product not found");
     }
 
-    // Standardize the product data format
-    const product = data.product;
     const standardizedProduct = {
       id: product.id,
-      name: product.name,
+      name: product.title,
       description: product.description,
-      images: product.assets
-        ? product.assets.map((asset) => ({
-            id: asset.preview.split("/").pop(),
-            url: asset.preview,
-          }))
-        : [],
-      variants: product.variants.map((variant) => ({
+      images: product.images.edges.map(({ node }) => ({
+        id: node.url.split("/").pop(),
+        url: node.url,
+      })),
+      variants: product.variants.edges.map(({ node: variant }) => ({
         id: variant.id,
-        name: variant.name,
-        price: variant.priceWithTax / 100,
-        currencyCode: variant.currencyCode,
-        images: variant.assets
-          ? variant.assets.map((asset) => ({
-              id: asset.preview.split("/").pop(),
-              url: asset.preview,
-            }))
+        name: variant.title,
+        price: parseFloat(variant.price.amount),
+        currencyCode: variant.price.currencyCode,
+        images: variant.image
+          ? [
+              {
+                id: variant.image.url.split("/").pop(),
+                url: variant.image.url,
+              },
+            ]
           : [],
-        attributes: variant.options.reduce((atribute, option) => {
-          atribute[option.group.name] = option.name;
-          return atribute;
+        attributes: variant.selectedOptions.reduce((attributes, option) => {
+          attributes[option.name] = option.value;
+          return attributes;
         }, {}),
       })),
     };
@@ -100,8 +103,8 @@ async function getProductById(workspaceId, productId) {
 // Function to fetch and standardize data for collections without caching
 async function getCollections(workspaceId) {
   try {
-    // Make an authenticated request using VendureClientHandler's automatic re-authentication
-    const data = await VendureClientHandler.makeAuthenticatedRequest(
+    // Make an authenticated request using ShopifyClientHandler's automatic re-authentication
+    const data = await ShopifyClientHandler.makeAuthenticatedRequest(
       workspaceId,
       shopProductsQuery.GET_COLLECTIONS_QUERY
     );
@@ -153,8 +156,8 @@ async function getCollections(workspaceId) {
 // Function to fetch and standardize product list from a collection without caching
 async function getProductsFromCollection(workspaceId, collectionId) {
   try {
-    // Make an authenticated request using VendureClientHandler's automatic re-authentication
-    const data = await VendureClientHandler.makeAuthenticatedRequest(
+    // Make an authenticated request using ShopifyClientHandler's automatic re-authentication
+    const data = await ShopifyClientHandler.makeAuthenticatedRequest(
       workspaceId,
       shopProductsQuery.GET_PRODUCTS_QUERY,
       {

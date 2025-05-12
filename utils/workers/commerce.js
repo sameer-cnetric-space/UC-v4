@@ -19,6 +19,15 @@ class CommerceWorker {
       };
       return res;
     }
+    if (commerce.name.toLowerCase() === "shopify") {
+      const res = {
+        name: commerce.name,
+        shopName: data.commerce.creds.shopName,
+        storefrontToken: data.commerce.creds.storefrontToken,
+        apiVersion: data.commerce.creds.apiVersion,
+      };
+      return res;
+    }
   }
 }
 

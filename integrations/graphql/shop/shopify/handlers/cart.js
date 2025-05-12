@@ -1,213 +1,114 @@
-const VendureClientHandler = require("./client");
+const ShopifyClientHandler = require("./client");
 const shopCartQuery = require("../queries/cart");
 
-async function getActiveCart(workspaceId, customerToken) {
-  try {
-    // Make an authenticated request using VendureClientHandler's automatic re-authentication
-    const data = await VendureClientHandler.makeAuthenticatedRequest(
-      workspaceId,
-      shopCartQuery.GET_ACTIVE_CART_QUERY,
-      {},
-      customerToken
-    );
+async function createCart(workspaceId, customerToken) {
+  const data = await ShopifyClientHandler.makeAuthenticatedRequest(
+    workspaceId,
+    shopCartQuery.CREATE_CART_MUTATION,
+    {},
+    "mutation"
+  );
 
-    if (!data.activeOrder) {
-      throw new Error("Cart not found");
-    }
-    // Standardize the cart data format
-    const standardizedCart = {
-      id: data.activeOrder.id,
-      lines: data.activeOrder.lines.map((line) => ({
-        id: line.id,
-        quantity: line.quantity,
-        linePrice: line.linePriceWithTax / 100,
-        productVariant: {
-          id: line.productVariant.id,
-          name: line.productVariant.name,
-          price: line.productVariant.priceWithTax / 100,
-          currencyCode: line.productVariant.currencyCode,
-          featuredAsset: {
-            url:
-              line.productVariant.featuredAsset?.preview ||
-              line.productVariant.product.featuredAsset?.preview ||
-              null,
-          },
-        },
-      })),
-      total: data.activeOrder.totalWithTax / 100,
-      currencyCode: data.activeOrder.currencyCode,
-      totalQuantity: data.activeOrder.totalQuantity,
-    };
+  return data.cartCreate.cart;
+}
 
-    return standardizedCart;
-  } catch (error) {
-    //console.error("Error in getActiveCart:", error);
-    throw new Error("Failed to fetch the cart" + error.message);
-  }
+async function getActiveCart(workspaceId, customerToken, extraArgs) {
+  const data = await ShopifyClientHandler.makeAuthenticatedRequest(
+    workspaceId,
+    shopCartQuery.GET_CART_BY_ID_QUERY,
+    { cartId: extraArgs.cartId }
+  );
+
+  const cart = data.cart;
+
+  return {
+    id: cart.id,
+    checkoutUrl: cart.checkoutUrl,
+    totalQuantity: cart.totalQuantity,
+    total: cart.cost.totalAmount.amount,
+    currencyCode: cart.cost.totalAmount.currencyCode,
+    lines: cart.lines.edges.map(({ node }) => ({
+      id: node.id,
+      quantity: node.quantity,
+      productVariant: {
+        id: node.merchandise.id,
+        name: node.merchandise.title,
+        price: node.merchandise.price.amount,
+        currencyCode: node.merchandise.price.currencyCode,
+        imageUrl: node.merchandise.image?.url || null,
+        productTitle: node.merchandise.product?.title || null,
+      },
+    })),
+  };
 }
 
 async function addItemToCart(
   workspaceId,
   { productVariantId, quantity },
-  customerToken
+  customerToken,
+  extraArgs
 ) {
-  try {
-    // Make an authenticated request using VendureClientHandler's automatic re-authentication
-    const data = await VendureClientHandler.makeAuthenticatedRequest(
-      workspaceId,
-      shopCartQuery.ADD_ITEM_TO_CART_MUTATION,
-      {
-        productVariantId: productVariantId,
-        quantity: quantity,
-      },
-      customerToken,
-      "mutation"
-    );
+  const data = await ShopifyClientHandler.makeAuthenticatedRequest(
+    workspaceId,
+    shopCartQuery.ADD_ITEM_TO_CART_MUTATION,
+    {
+      cartId: extraArgs.cartId,
+      merchandiseId: productVariantId,
+      quantity,
+    },
+    "mutation"
+  );
 
-    // Standardize the cart data format
-    const standardizedCart = {
-      id: data.addItemToOrder.id,
-      lines: data.addItemToOrder.lines.map((line) => ({
-        id: line.id,
-        quantity: line.quantity,
-        linePrice: line.linePriceWithTax / 100,
-        productVariant: {
-          id: line.productVariant.id,
-          name: line.productVariant.name,
-          price: line.productVariant.priceWithTax / 100,
-          currencyCode: line.productVariant.currencyCode,
-          images: [
-            ...line.productVariant.product.assets.map((asset) => ({
-              url: asset?.preview || null,
-            })),
-            ...line.productVariant.assets.map((asset) => ({
-              url: asset?.preview || null,
-            })),
-          ],
-        },
-      })),
-      total: data.addItemToOrder.totalWithTax / 100,
-      currencyCode: data.addItemToOrder.currencyCode,
-      totalQuantity: data.addItemToOrder.totalQuantity,
-    };
-
-    return standardizedCart;
-  } catch (error) {
-    console.error("Error in addItemToCart:", error);
-    throw new Error("Failed to add to cart");
-  }
-}
-
-async function removeOrderLine(workspaceId, orderLineId, customerToken) {
-  try {
-    // Make an authenticated request using VendureClientHandler's automatic re-authentication
-    const data = await VendureClientHandler.makeAuthenticatedRequest(
-      workspaceId,
-      shopCartQuery.REMOVE_ORDER_LINE_MUTATION,
-      {
-        orderLineId: orderLineId,
-      },
-      customerToken,
-      "mutation"
-    );
-
-    if (!data.removeOrderLine) {
-      throw new Error("Cart not found");
-    }
-
-    // Standardize the cart data format
-    const standardizedCart = {
-      id: data.removeOrderLine.id,
-      lines: data.removeOrderLine.lines.map((line) => ({
-        id: line.id,
-        quantity: line.quantity,
-        linePrice: line.linePriceWithTax / 100,
-        productVariant: {
-          id: line.productVariant.id,
-          name: line.productVariant.name,
-          price: line.productVariant.priceWithTax / 100,
-          currencyCode: line.productVariant.currencyCode,
-          images: [
-            ...line.productVariant.product.assets.map((asset) => ({
-              url: asset?.preview || null,
-            })),
-            ...line.productVariant.assets.map((asset) => ({
-              url: asset?.preview || null,
-            })),
-          ],
-        },
-      })),
-      total: data.removeOrderLine.totalWithTax / 100,
-      currencyCode: data.removeOrderLine.currencyCode,
-      totalQuantity: data.removeOrderLine.totalQuantity,
-    };
-
-    return standardizedCart;
-  } catch (error) {
-    console.error("Error in removeOrderLine:", error);
-    throw new Error("Failed to remove from cart");
-  }
+  return data.cartLinesAdd.cart;
 }
 
 async function adjustOrderLine(
   workspaceId,
   { orderLineId, quantity },
-  customerToken
+  customerToken,
+  extraArgs
 ) {
-  try {
-    // Make an authenticated request using VendureClientHandler's automatic re-authentication
-    const data = await VendureClientHandler.makeAuthenticatedRequest(
-      workspaceId,
-      shopCartQuery.ADJUST_ORDER_LINE_MUTATION,
-      {
-        orderLineId: orderLineId,
-        quantity: quantity,
-      },
-      customerToken,
-      "mutation"
-    );
-
-    if (!data.adjustOrderLine) {
-      throw new Error("Cart not found");
-    }
-
-    // Standardize the cart data format
-    const standardizedCart = {
-      id: data.adjustOrderLine.id,
-      lines: data.adjustOrderLine.lines.map((line) => ({
-        id: line.id,
-        quantity: line.quantity,
-        linePrice: line.linePriceWithTax / 100,
-        productVariant: {
-          id: line.productVariant.id,
-          name: line.productVariant.name,
-          price: line.productVariant.priceWithTax / 100,
-          currencyCode: line.productVariant.currencyCode,
-          images: [
-            ...line.productVariant.product.assets.map((asset) => ({
-              url: asset?.preview || null,
-            })),
-            ...line.productVariant.assets.map((asset) => ({
-              url: asset?.preview || null,
-            })),
-          ],
+  const data = await ShopifyClientHandler.makeAuthenticatedRequest(
+    workspaceId,
+    shopCartQuery.ADJUST_ORDER_LINE_MUTATION,
+    {
+      cartId: extraArgs.cartId,
+      lineUpdates: [
+        {
+          id: orderLineId,
+          quantity,
         },
-      })),
-      total: data.adjustOrderLine.totalWithTax / 100,
-      currencyCode: data.adjustOrderLine.currencyCode,
-      totalQuantity: data.adjustOrderLine.totalQuantity,
-    };
+      ],
+    },
+    "mutation"
+  );
 
-    return standardizedCart;
-  } catch (error) {
-    //console.error("Error in adjustorderLine:", error);
-    throw new Error("Failed to adjust cart" + error.message);
-  }
+  return data.cartLinesUpdate.cart;
+}
+
+async function removeOrderLine(
+  workspaceId,
+  orderLineId,
+  customerToken,
+  extraArgs
+) {
+  const data = await ShopifyClientHandler.makeAuthenticatedRequest(
+    workspaceId,
+    shopCartQuery.REMOVE_ORDER_LINE_MUTATION,
+    {
+      cartId: extraArgs.cartId,
+      lineIds: [orderLineId],
+    },
+    "mutation"
+  );
+
+  return data.cartLinesRemove.cart;
 }
 
 module.exports = {
+  createCart,
   getActiveCart,
   addItemToCart,
-  removeOrderLine,
   adjustOrderLine,
+  removeOrderLine,
 };

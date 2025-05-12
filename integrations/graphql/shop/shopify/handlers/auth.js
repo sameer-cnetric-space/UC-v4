@@ -1,41 +1,73 @@
 const shopAuthQuery = require("../queries/auth");
-const VendureClientHandler = require("./client");
-const { createCustomer } = require("../../../admin/vendure/handlers/customers");
-// const redisService = require("../../../../../services/redis");
+const ShopifyClientHandler = require("./client");
 
-// Function to fetch and standardize product data with caching for productsList in a separate key with 60-second TTL
 async function customerLogin(workspaceId, { email, password }) {
   try {
-    // Make an authenticated request using VendureClientHandler's automatic re-authentication
-    const data = await VendureClientHandler.makeAuthenticatedRequest(
+    const response = await ShopifyClientHandler.makeAuthenticatedRequest(
       workspaceId,
       shopAuthQuery.LOGIN_MUTATION,
       { email, password },
-      null,
-      "mutation",
-      "rest"
+      "mutation"
     );
-    if (data.data.data.login.errorCode === "INVALID_CREDENTIALS_ERROR") {
+    if (
+      response.customerAccessTokenCreate?.customerUserErrors[0]?.code ===
+      "UNIDENTIFIED_CUSTOMER"
+    ) {
       throw new Error("Invalid credentials");
     }
 
     return {
-      id: data.data.data.login.id,
-      identifier: data.data.data.login.identifier,
-      token: data.headers["vendure-auth-token"],
+      token: response.customerAccessTokenCreate.customerAccessToken.accessToken,
+      expiresAt:
+        response.customerAccessTokenCreate.customerAccessToken.expiresAt,
     };
   } catch (error) {
-    //console.error("Error in login:", error);
-    throw new Error("Failed to login" + error.message);
+    throw new Error("Failed to login: " + error.message);
   }
 }
 
 async function customerRegister(workspaceId, payload) {
   try {
-    return await createCustomer(workspaceId, payload);
+    const response = await ShopifyClientHandler.makeAuthenticatedRequest(
+      workspaceId,
+      shopAuthQuery.REGISTER_MUTATION,
+      {
+        input: {
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+          email: payload.email,
+          phone: "+91" + payload.phoneNumber,
+          password: payload.password,
+          acceptsMarketing: true,
+        },
+      },
+      "mutation"
+    );
+
+    if (response.customerCreate.customerUserErrors.length > 0) {
+      const errorMessages = result.userErrors
+        .map((err) => err.message)
+        .join(", ");
+      throw new Error("Shopify registration failed: " + errorMessages);
+    }
+
+    // if (result.userErrors?.length > 0) {
+    //   throw new Error(JSON.stringify(result));
+    // }
+    // console.log(JSON.stringify(result));
+    return {
+      message: "Signup successful",
+      data: {
+        userId: response.customerCreate.customer.id,
+        name:
+          response.customerCreate.customer.firstName +
+          " " +
+          response.customerCreate.customer.lastName,
+        email: response.customerCreate.customer.email,
+      },
+    };
   } catch (error) {
-    //console.error("Error in register:", error);
-    throw new Error("Failed to register" + error.message);
+    throw new Error("Failed to register: " + error.message);
   }
 }
 
