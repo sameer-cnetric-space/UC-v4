@@ -4,7 +4,7 @@ const gql = require("graphql-tag");
 const GET_ORDERS_QUERY = gql`
   query GetCustomerOrders($customerAccessToken: String!) {
     customer(customerAccessToken: $customerAccessToken) {
-      orders(first: 100) {
+      orders(first: 100, reverse: true) {
         edges {
           node {
             id
