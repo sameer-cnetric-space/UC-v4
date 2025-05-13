@@ -19,7 +19,10 @@ async function getActiveCart(workspaceId, customerToken, extraArgs) {
     { cartId: extraArgs.cartId }
   );
 
-  const cart = data.cart;
+  const cart = data?.cart;
+  if (!cart) {
+    throw new Error("Cart not found");
+  }
 
   return {
     id: cart.id,
